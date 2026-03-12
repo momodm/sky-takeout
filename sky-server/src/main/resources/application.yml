@@ -22,8 +22,8 @@ mybatis:
 
 logging:
   level:
-    '[com.sky]':  debug
-    '[org.springframework]': info
+    "[com.sky]": debug
+    "[org.springframework]": info
 
 sky:
   jwt:
