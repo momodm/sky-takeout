@@ -1,20 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 
+    Mapper XML 配置文件
+    namespace: 必须和 Mapper 接口的全限定名一致，这样 MyBatis 才能找到对应的 SQL。
+-->
 <mapper namespace="com.sky.mapper.EmployeeMapper">
 
+    <!-- 
+        分页查询
+        id: 对应 Mapper 接口中的方法名 pageQuery
+        resultType: 查询结果映射的实体类类型
+    -->
     <select id="pageQuery" resultType="com.sky.entity.Employee">
         select * from employee
+        <!-- 
+            <where> 标签：
+            1. 自动添加 WHERE 关键字。
+            2. 如果标签内部的内容为空（即没有任何查询条件），则不会生成 WHERE。
+            3. 会自动去除内部第一个条件前面的 AND 或 OR。
+        -->
         <where>
+            <!-- 
+                <if> 标签：动态 SQL 的核心，用于条件判断。
+                test: OGNL 表达式，判断 name 属性是否不为 null 且不为空字符串。
+            -->
             <if test="name != null and name != ''">
+                <!-- concat: 字符串拼接函数，实现模糊查询 -->
                 and name like concat('%',#{name},'%')
             </if>
         </where>
+        <!-- 按创建时间降序排序 -->
         order by create_time desc
     </select>
 
+    <!-- 
+        动态更新员工信息
+        id: 对应 Mapper 接口中的方法名 update
+        parameterType: 参数类型（可以省略）
+    -->
     <update id="update" parameterType="com.sky.entity.Employee">
         update employee
+        <!-- 
+            <set> 标签：
+            1. 自动添加 SET 关键字。
+            2. 自动去除最后多余的逗号（例如最后一个字段后面如果带了逗号，会被去掉）。
+        -->
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="username != null">username = #{username},</if>
