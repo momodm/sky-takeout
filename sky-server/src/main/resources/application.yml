@@ -10,9 +10,14 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/sky_take_out?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: t7952235
+    url: ${SKY_DB_URL}
+    username: ${SKY_DB_USERNAME}
+    password: ${SKY_DB_PASSWORD}
+  redis:
+    host: ${SKY_REDIS_HOST}
+    port: ${SKY_REDIS_PORT}
+    database: ${SKY_REDIS_DATABASE}
+    password: ${SKY_REDIS_PASSWORD:}
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -27,9 +32,14 @@ logging:
 
 sky:
   jwt:
-    # 设置jwt签名加密时使用的秘钥
-    admin-secret-key: itcast
-    # 设置jwt过期时间
-    admin-ttl: 7200000
-    # 设置前端传递过来的令牌名称
-    admin-token-name: token
+    admin-secret-key: ${SKY_JWT_ADMIN_SECRET_KEY}
+    admin-ttl: ${SKY_JWT_ADMIN_TTL}
+    admin-token-name: ${SKY_JWT_ADMIN_TOKEN_NAME}
+    user-secret-key: ${SKY_JWT_USER_SECRET_KEY}
+    user-ttl: ${SKY_JWT_USER_TTL}
+    user-token-name: ${SKY_JWT_USER_TOKEN_NAME}
+  aliyunoss:
+    endpoint: ${SKY_ALIYUNOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+    access-key-id: ${SKY_ALIYUNOSS_ACCESS_KEY_ID:}
+    access-key-secret: ${SKY_ALIYUNOSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${SKY_ALIYUNOSS_BUCKET_NAME:}
