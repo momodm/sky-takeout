@@ -1,4 +1,4 @@
-﻿package com.sky.controller.admin;
+package com.sky.controller.admin;
 
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController("adminOrderController")
 @RequestMapping("/admin/order")
-@Api(tags = "璁㈠崟绠＄悊鎺ュ彛")
+@Api(tags = "订单管理接口")
 @Slf4j
 public class OrderController {
 
@@ -27,61 +27,61 @@ public class OrderController {
     private OrderService orderService;
 
     @GetMapping("/conditionSearch")
-    @ApiOperation("璁㈠崟鏉′欢鍒嗛〉鏌ヨ")
+    @ApiOperation("订单条件分页查询")
     public Result<PageResult> conditionSearch(OrdersPageQueryDTO ordersPageQueryDTO) {
-        // ??????????????????????????????
-        log.info("璁㈠崟鏉′欢鍒嗛〉鏌ヨ: {}", ordersPageQueryDTO);
+        // 管理端按时间、状态等条件筛选订单，方便接单台和后台列表联动。
+        log.info("订单条件分页查询: {}", ordersPageQueryDTO);
         return Result.success(orderService.conditionSearch(ordersPageQueryDTO));
     }
 
     @GetMapping("/details/{id}")
-    @ApiOperation("璁㈠崟璇︽儏鏌ヨ")
+    @ApiOperation("订单详情查询")
     public Result<OrderVO> details(@PathVariable Long id) {
-        log.info("璁㈠崟璇︽儏鏌ヨ: {}", id);
+        log.info("订单详情查询: {}", id);
         return Result.success(orderService.adminOrderDetail(id));
     }
 
     @PutMapping("/confirm")
-    @ApiOperation("鎺ュ崟")
+    @ApiOperation("接单")
     public Result<String> confirm(@RequestBody Orders orders) {
-        // ???????????????????
-        log.info("鎺ュ崟: {}", orders);
+        // 接单后订单会从待接单推进到已接单状态。
+        log.info("接单: {}", orders);
         orderService.confirm(orders);
         return Result.success();
     }
 
     @PutMapping("/rejection")
-    @ApiOperation("鎷掑崟")
+    @ApiOperation("拒单")
     public Result<String> rejection(@RequestBody Orders orders) {
-        // ??????????????????????
-        log.info("鎷掑崟: {}", orders);
+        // 拒单会关闭订单，并记录拒单原因供用户侧查看。
+        log.info("拒单: {}", orders);
         orderService.rejection(orders);
         return Result.success();
     }
 
     @PutMapping("/cancel")
-    @ApiOperation("鍙栨秷璁㈠崟")
+    @ApiOperation("取消订单")
     public Result<String> cancel(@RequestBody Orders orders) {
-        // ?????????????????????????????
-        log.info("鍙栨秷璁㈠崟: {}", orders);
+        // 管理端取消订单用于处理异常履约场景，和用户主动取消区分开。
+        log.info("取消订单: {}", orders);
         orderService.cancel(orders);
         return Result.success();
     }
 
     @PutMapping("/delivery/{id}")
-    @ApiOperation("娲鹃€佽鍗?)
+    @ApiOperation("派送订单")
     public Result<String> delivery(@PathVariable Long id) {
-        // ?????????????????????
-        log.info("娲鹃€佽鍗? {}", id);
+        // 派送接口用于把已接单订单推进到配送中阶段。
+        log.info("派送订单: {}", id);
         orderService.delivery(id);
         return Result.success();
     }
 
     @PutMapping("/complete/{id}")
-    @ApiOperation("瀹屾垚璁㈠崟")
+    @ApiOperation("完成订单")
     public Result<String> complete(@PathVariable Long id) {
-        // ?????????????????????????
-        log.info("瀹屾垚璁㈠崟: {}", id);
+        // 完成订单意味着本次履约闭环结束，并会写入送达时间。
+        log.info("完成订单: {}", id);
         orderService.complete(id);
         return Result.success();
     }

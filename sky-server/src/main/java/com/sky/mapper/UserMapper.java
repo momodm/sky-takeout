@@ -37,4 +37,17 @@ public interface UserMapper {
             "</script>"
     })
     Integer countByCreateTime(@Param("beginTime") LocalDateTime beginTime, @Param("endTime") LocalDateTime endTime);
+
+    @Select({
+            "<script>",
+            "select count(*)",
+            "from user",
+            "<where>",
+            "  <if test='endTime != null'>",
+            "    and create_time <![CDATA[<=]]> #{endTime}",
+            "  </if>",
+            "</where>",
+            "</script>"
+    })
+    Integer countTotalByCreateTime(@Param("endTime") LocalDateTime endTime);
 }
