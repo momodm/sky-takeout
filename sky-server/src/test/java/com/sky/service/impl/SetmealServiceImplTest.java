@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.component.CatalogCacheService;
 import com.sky.dto.SetmealDTO;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
@@ -38,6 +39,9 @@ class SetmealServiceImplTest {
 
     @Mock
     private SetmealDishMapper setmealDishMapper;
+
+    @Mock
+    private CatalogCacheService catalogCacheService;
 
     @InjectMocks
     private SetmealServiceImpl setmealService;
@@ -165,10 +169,31 @@ class SetmealServiceImplTest {
     @Test
     void listShouldQueryEnabledSetmealByCategory() {
         List<Setmeal> setmeals = Collections.singletonList(Setmeal.builder().id(1L).categoryId(4L).build());
+        when(catalogCacheService.buildSetmealListKey(4L)).thenReturn("USER_SETMEAL_LIST:4");
+        when(catalogCacheService.getList("USER_SETMEAL_LIST:4", Setmeal.class)).thenReturn(null);
         when(setmealMapper.list(org.mockito.ArgumentMatchers.any(Setmeal.class))).thenReturn(setmeals);
 
         List<Setmeal> result = setmealService.list(4L);
 
         assertSame(setmeals, result);
+    }
+
+    @Test
+    void listShouldReturnCachedSetmealsWhenAvailable() {
+        List<Setmeal> cached = Collections.singletonList(Setmeal.builder().id(11L).name("cached").build());
+        when(catalogCacheService.buildSetmealListKey(4L)).thenReturn("USER_SETMEAL_LIST:4");
+        when(catalogCacheService.getList("USER_SETMEAL_LIST:4", Setmeal.class)).thenReturn(cached);
+
+        List<Setmeal> result = setmealService.list(4L);
+
+        assertSame(cached, result);
+        verify(setmealMapper, never()).list(any(Setmeal.class));
+    }
+
+    @Test
+    void startOrStopShouldClearSetmealCache() {
+        setmealService.startOrStop(StatusConstant.ENABLE, 66L);
+
+        verify(catalogCacheService).clearSetmealCache();
     }
 }

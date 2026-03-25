@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.component.CatalogCacheService;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
@@ -33,12 +34,17 @@ public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private SetmealMapper setmealMapper;
 
+    @Autowired
+    private CatalogCacheService catalogCacheService;
+
     @Override
     public void save(CategoryDTO categoryDTO) {
         Category category = new Category();
         BeanUtils.copyProperties(categoryDTO, category);
         category.setStatus(StatusConstant.DISABLE);
         categoryMapper.insert(category);
+        // 分类变更后清空分类缓存，保证用户端下次读取拿到最新启售结果。
+        catalogCacheService.clearCategoryCache();
     }
 
     @Override
@@ -61,6 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         categoryMapper.deleteById(id);
+        catalogCacheService.clearCategoryCache();
     }
 
     @Override
@@ -68,6 +75,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = new Category();
         BeanUtils.copyProperties(categoryDTO, category);
         categoryMapper.update(category);
+        catalogCacheService.clearCategoryCache();
     }
 
     @Override
@@ -77,10 +85,20 @@ public class CategoryServiceImpl implements CategoryService {
                 .status(status)
                 .build();
         categoryMapper.update(category);
+        catalogCacheService.clearCategoryCache();
     }
 
     @Override
     public List<Category> list(Integer type) {
-        return categoryMapper.list(type);
+        String cacheKey = catalogCacheService.buildCategoryListKey(type);
+        List<Category> cachedCategories = catalogCacheService.getList(cacheKey, Category.class);
+        if (cachedCategories != null) {
+            return cachedCategories;
+        }
+
+        // 用户端分类列表是高频读接口，命中数据库后回填缓存，降低重复查询压力。
+        List<Category> categories = categoryMapper.list(type);
+        catalogCacheService.putList(cacheKey, categories);
+        return categories;
     }
 }

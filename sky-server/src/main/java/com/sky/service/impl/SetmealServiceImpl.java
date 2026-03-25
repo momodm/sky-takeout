@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.component.CatalogCacheService;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
@@ -33,6 +34,9 @@ public class SetmealServiceImpl implements SetmealService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+    @Autowired
+    private CatalogCacheService catalogCacheService;
+
     @Override
     @Transactional
     public void saveWithDish(SetmealDTO setmealDTO) {
@@ -46,6 +50,7 @@ public class SetmealServiceImpl implements SetmealService {
         setmealMapper.insert(setmeal);
         // 套餐主表先入库，再用生成的套餐 id 批量保存菜品关系。
         saveSetmealDishes(setmeal.getId(), setmealDTO.getSetmealDishes());
+        catalogCacheService.clearSetmealCache();
     }
 
     @Override
@@ -78,6 +83,7 @@ public class SetmealServiceImpl implements SetmealService {
         // 修改套餐时采用“删旧关联 + 写新关联”的方式保持关系表简单可靠。
         setmealDishMapper.deleteBySetmealIds(Collections.singletonList(setmealDTO.getId()));
         saveSetmealDishes(setmealDTO.getId(), setmealDTO.getSetmealDishes());
+        catalogCacheService.clearSetmealCache();
     }
 
     @Override
@@ -91,6 +97,7 @@ public class SetmealServiceImpl implements SetmealService {
         // 仅允许删除停售套餐，并同步清理套餐菜品关系。
         setmealMapper.deleteByIds(ids);
         setmealDishMapper.deleteBySetmealIds(ids);
+        catalogCacheService.clearSetmealCache();
     }
 
     @Override
@@ -100,15 +107,24 @@ public class SetmealServiceImpl implements SetmealService {
                 .status(status)
                 .build();
         setmealMapper.update(setmeal);
+        catalogCacheService.clearSetmealCache();
     }
 
     @Override
     public List<Setmeal> list(Long categoryId) {
+        String cacheKey = catalogCacheService.buildSetmealListKey(categoryId);
+        List<Setmeal> cachedSetmeals = catalogCacheService.getList(cacheKey, Setmeal.class);
+        if (cachedSetmeals != null) {
+            return cachedSetmeals;
+        }
+
         Setmeal setmeal = Setmeal.builder()
                 .categoryId(categoryId)
                 .status(StatusConstant.ENABLE)
                 .build();
-        return setmealMapper.list(setmeal);
+        List<Setmeal> setmeals = setmealMapper.list(setmeal);
+        catalogCacheService.putList(cacheKey, setmeals);
+        return setmeals;
     }
 
     private void saveSetmealDishes(Long setmealId, List<SetmealDish> setmealDishes) {

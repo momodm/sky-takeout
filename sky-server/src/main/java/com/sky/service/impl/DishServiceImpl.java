@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.component.CatalogCacheService;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
@@ -38,6 +39,9 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+    @Autowired
+    private CatalogCacheService catalogCacheService;
+
     @Override
     @Transactional
     public void saveWithFlavor(DishDTO dishDTO) {
@@ -55,6 +59,8 @@ public class DishServiceImpl implements DishService {
             flavors.forEach(dishFlavor -> dishFlavor.setDishId(dishId));
             dishFlavorMapper.insertBatch(flavors);
         }
+        // 菜品和口味任一变更都会影响用户端菜品列表，需要统一失效。
+        catalogCacheService.clearDishCache();
     }
 
     @Override
@@ -84,6 +90,7 @@ public class DishServiceImpl implements DishService {
 
         dishMapper.deleteByIds(ids);
         dishFlavorMapper.deleteByDishIds(ids);
+        catalogCacheService.clearDishCache();
     }
 
     @Override
@@ -114,6 +121,7 @@ public class DishServiceImpl implements DishService {
             flavors.forEach(dishFlavor -> dishFlavor.setDishId(dishDTO.getId()));
             dishFlavorMapper.insertBatch(flavors);
         }
+        catalogCacheService.clearDishCache();
     }
 
     @Override
@@ -123,6 +131,7 @@ public class DishServiceImpl implements DishService {
                 .status(status)
                 .build();
         dishMapper.update(dish);
+        catalogCacheService.clearDishCache();
     }
 
     @Override
@@ -136,15 +145,24 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public List<DishVO> listWithFlavor(Long categoryId) {
+        String cacheKey = catalogCacheService.buildDishListKey(categoryId);
+        List<DishVO> cachedDishes = catalogCacheService.getList(cacheKey, DishVO.class);
+        if (cachedDishes != null) {
+            return cachedDishes;
+        }
+
         Dish dish = Dish.builder()
                 .categoryId(categoryId)
                 .status(StatusConstant.ENABLE)
                 .build();
-        return dishMapper.list(dish).stream().map(item -> {
+        List<DishVO> dishVOS = dishMapper.list(dish).stream().map(item -> {
             DishVO dishVO = new DishVO();
             BeanUtils.copyProperties(item, dishVO);
             dishVO.setFlavors(dishFlavorMapper.getByDishId(item.getId()));
             return dishVO;
         }).collect(Collectors.toList());
+        // 组装完口味后再缓存，避免下次命中缓存时重复查口味表。
+        catalogCacheService.putList(cacheKey, dishVOS);
+        return dishVOS;
     }
 }
