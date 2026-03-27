@@ -10,12 +10,21 @@ import {
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
 import {
   dishFlavorLinesFromEntities,
   formatCurrency,
+  getErrorMessage,
   normalizeImage,
 } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 function createDishForm() {
   return {
@@ -54,6 +63,7 @@ export function ConsoleDishesPage() {
   const queryClient = useQueryClient();
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(createDishForm());
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
   const categoriesQuery = useQuery({
     queryKey: ['console', 'categories', 'dish-page'],
@@ -77,6 +87,18 @@ export function ConsoleDishesPage() {
     mutationFn: (file: File) => adminApi.uploadFile(file),
     onSuccess: (image) => {
       setForm((current) => ({ ...current, image }));
+      setFeedback({
+        title: '图片已上传',
+        body: appCopy.consoleFeedback.uploadSuccess,
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.uploadErrorTitle,
+        body: getErrorMessage(error, '图片上传没成功，你可以继续手动填写图片 URL。'),
+        tone: 'warning',
+      });
     },
   });
 
@@ -98,17 +120,57 @@ export function ConsoleDishesPage() {
     onSuccess: async () => {
       setForm(createDishForm());
       await refreshDishes();
+      setFeedback({
+        title: form.id ? '菜品已更新' : '菜品已新增',
+        body: appCopy.consoleFeedback.saveSuccess('菜品'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.saveErrorTitle('菜品'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: number }) => adminApi.dishStatus(status, id),
-    onSuccess: refreshDishes,
+    onSuccess: async (_, variables) => {
+      await refreshDishes();
+      setFeedback({
+        title: variables.status === 1 ? '菜品已上架' : '菜品已下架',
+        body: appCopy.consoleFeedback.statusSuccess('菜品', variables.status === 1 ? '上架' : '下架'),
+        tone: 'live',
+      });
+    },
+    onError: (error, variables) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.statusErrorTitle('菜品', variables.status === 1 ? '上架' : '下架'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteDishes([id]),
-    onSuccess: refreshDishes,
+    onSuccess: async () => {
+      await refreshDishes();
+      setFeedback({
+        title: '菜品已删除',
+        body: appCopy.consoleFeedback.deleteSuccess('菜品'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.deleteErrorTitle('菜品'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const metrics = useMemo(() => {
@@ -138,13 +200,7 @@ export function ConsoleDishesPage() {
         }
       />
 
-      {uploadMutation.isError ? (
-        <InlineNotice
-          body="图片上传没成功，你仍然可以先手动填写图片地址继续保存。"
-          title="上传失败，已自动回退到手填 URL"
-          tone="warning"
-        />
-      ) : null}
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       <div className="grid-2">
         <section className="panel section-card">
@@ -276,17 +332,25 @@ export function ConsoleDishesPage() {
                     <button
                       className="button secondary small"
                       onClick={() =>
-                        adminApi.dishById(dish.id).then((detail) =>
-                          setForm({
-                            id: detail.id,
-                            name: detail.name,
-                            categoryId: String(detail.categoryId),
-                            price: String(detail.price),
-                            image: detail.image,
-                            description: detail.description,
-                            status: String(detail.status),
-                            flavorLines: dishFlavorLinesFromEntities(detail.flavors),
-                          }))}
+                        void adminApi.dishById(dish.id)
+                          .then((detail) =>
+                            setForm({
+                              id: detail.id,
+                              name: detail.name,
+                              categoryId: String(detail.categoryId),
+                              price: String(detail.price),
+                              image: detail.image,
+                              description: detail.description,
+                              status: String(detail.status),
+                              flavorLines: dishFlavorLinesFromEntities(detail.flavors),
+                            }))
+                          .catch((error) =>
+                            setFeedback({
+                              title: '菜品详情读取失败',
+                              body: getErrorMessage(error),
+                              tone: 'fallback',
+                            }))
+                      }
                       type="button"
                     >
                       编辑

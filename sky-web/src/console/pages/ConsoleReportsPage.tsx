@@ -2,19 +2,28 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { adminApi } from '../../shared/api';
 import type { AppChartOption } from '../../shared/chart-runtime';
-import { ChartCard, ErrorState, InlineNotice, MetricCard, PageHero } from '../../shared/components';
+import { ChartCard, ErrorState, InlineNotice, MetricCard, PageHero, type NoticeTone } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
 import {
   downloadBlob,
   formatCurrency,
   formatNumber,
+  getErrorMessage,
   nextSevenDaysRange,
   toChartPoints,
 } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 export function ConsoleReportsPage() {
   const initialRange = nextSevenDaysRange();
   const [begin, setBegin] = useState(initialRange.begin);
   const [end, setEnd] = useState(initialRange.end);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
   const turnoverQuery = useQuery({
     queryKey: ['console', 'reports', 'turnover', begin, end],
@@ -37,6 +46,18 @@ export function ConsoleReportsPage() {
     mutationFn: () => adminApi.exportReport(),
     onSuccess: (blob) => {
       downloadBlob(blob, `sky-report-${begin}-${end}.xlsx`);
+      setFeedback({
+        title: '报表导出已开始',
+        body: appCopy.consoleFeedback.exportSuccess,
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.exportErrorTitle,
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
   const hasError = turnoverQuery.isError || userQuery.isError || ordersQuery.isError || top10Query.isError;
@@ -123,13 +144,7 @@ export function ConsoleReportsPage() {
         }
       />
 
-      {exportMutation.isError ? (
-        <InlineNotice
-          body="导出接口没成功，但趋势和排行仍然可以继续查看。"
-          title="导出失败，请确认后端服务和文件流接口正常"
-          tone="warning"
-        />
-      ) : null}
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       {hasError ? (
         <ErrorState

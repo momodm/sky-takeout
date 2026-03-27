@@ -10,8 +10,16 @@ import {
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
-import { formatCurrency, normalizeImage } from '../../shared/utils';
+import { appCopy } from '../../shared/copy';
+import { formatCurrency, getErrorMessage, normalizeImage } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 function createSetmealForm() {
   return {
@@ -30,6 +38,7 @@ export function ConsoleSetmealsPage() {
   const queryClient = useQueryClient();
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(createSetmealForm());
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
   const categoriesQuery = useQuery({
     queryKey: ['console', 'categories', 'setmeal-page'],
@@ -57,6 +66,18 @@ export function ConsoleSetmealsPage() {
     mutationFn: (file: File) => adminApi.uploadFile(file),
     onSuccess: (image) => {
       setForm((current) => ({ ...current, image }));
+      setFeedback({
+        title: '图片已上传',
+        body: appCopy.consoleFeedback.uploadSuccess,
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.uploadErrorTitle,
+        body: getErrorMessage(error, '图片上传没成功，你可以继续手动填写图片 URL。'),
+        tone: 'warning',
+      });
     },
   });
 
@@ -83,17 +104,57 @@ export function ConsoleSetmealsPage() {
     onSuccess: async () => {
       setForm(createSetmealForm());
       await refreshSetmeals();
+      setFeedback({
+        title: form.id ? '套餐已更新' : '套餐已新增',
+        body: appCopy.consoleFeedback.saveSuccess('套餐'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.saveErrorTitle('套餐'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: number }) => adminApi.setmealStatus(status, id),
-    onSuccess: refreshSetmeals,
+    onSuccess: async (_, variables) => {
+      await refreshSetmeals();
+      setFeedback({
+        title: variables.status === 1 ? '套餐已上架' : '套餐已下架',
+        body: appCopy.consoleFeedback.statusSuccess('套餐', variables.status === 1 ? '上架' : '下架'),
+        tone: 'live',
+      });
+    },
+    onError: (error, variables) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.statusErrorTitle('套餐', variables.status === 1 ? '上架' : '下架'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteSetmeals([id]),
-    onSuccess: refreshSetmeals,
+    onSuccess: async () => {
+      await refreshSetmeals();
+      setFeedback({
+        title: '套餐已删除',
+        body: appCopy.consoleFeedback.deleteSuccess('套餐'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.deleteErrorTitle('套餐'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const availableDishes = useMemo(() => dishesQuery.data?.records ?? [], [dishesQuery.data?.records]);
@@ -124,13 +185,7 @@ export function ConsoleSetmealsPage() {
         }
       />
 
-      {uploadMutation.isError ? (
-        <InlineNotice
-          body="图片上传没成功，你可以先手动填图片地址，不会阻塞套餐保存。"
-          title="上传失败，已回退到手填 URL"
-          tone="warning"
-        />
-      ) : null}
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       <div className="grid-2">
         <section className="panel section-card">
@@ -299,22 +354,30 @@ export function ConsoleSetmealsPage() {
                     <button
                       className="button secondary small"
                       onClick={() =>
-                        adminApi.setmealById(setmeal.id).then((detail) =>
-                          setForm({
-                            id: detail.id,
-                            categoryId: String(detail.categoryId),
-                            name: detail.name,
-                            price: String(detail.price),
-                            image: detail.image,
-                            description: detail.description,
-                            status: String(detail.status),
-                            dishRows: detail.setmealDishes.length
-                              ? detail.setmealDishes.map((dish) => ({
-                                  dishId: String(dish.dishId),
-                                  copies: String(dish.copies),
-                                }))
-                              : [{ dishId: '', copies: '1' }],
-                          }))}
+                        void adminApi.setmealById(setmeal.id)
+                          .then((detail) =>
+                            setForm({
+                              id: detail.id,
+                              categoryId: String(detail.categoryId),
+                              name: detail.name,
+                              price: String(detail.price),
+                              image: detail.image,
+                              description: detail.description,
+                              status: String(detail.status),
+                              dishRows: detail.setmealDishes.length
+                                ? detail.setmealDishes.map((dish) => ({
+                                    dishId: String(dish.dishId),
+                                    copies: String(dish.copies),
+                                  }))
+                                : [{ dishId: '', copies: '1' }],
+                            }))
+                          .catch((error) =>
+                            setFeedback({
+                              title: '套餐详情读取失败',
+                              body: getErrorMessage(error),
+                              tone: 'fallback',
+                            }))
+                      }
                       type="button"
                     >
                       编辑

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../shared/api';
 import {
@@ -7,11 +8,20 @@ import {
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
-import { formatCurrency, formatNumber } from '../../shared/utils';
+import { appCopy } from '../../shared/copy';
+import { formatCurrency, formatNumber, getErrorMessage } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 export function ConsoleShopPage() {
   const queryClient = useQueryClient();
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const shopStatusQuery = useQuery({
     queryKey: ['console', 'shop-status'],
     queryFn: () => adminApi.shopStatus(),
@@ -27,11 +37,23 @@ export function ConsoleShopPage() {
 
   const shopMutation = useMutation({
     mutationFn: (status: number) => adminApi.setShopStatus(status),
-    onSuccess: async () => {
+    onSuccess: async (_, status) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['console', 'shop-status'] }),
         queryClient.invalidateQueries({ queryKey: ['console', 'workspace'] }),
       ]);
+      setFeedback({
+        title: status === 1 ? '店铺已开始营业' : '店铺已切换为打烊',
+        body: appCopy.consoleFeedback.shopStatusSuccess(status === 1),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.shopStatusErrorTitle,
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
 
@@ -63,6 +85,8 @@ export function ConsoleShopPage() {
           </div>
         }
       />
+
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       {hasError ? (
         <ErrorState body="店铺状态或工作台接口暂时不可用，请确认后端服务已启动。" title="店铺面板加载失败" />

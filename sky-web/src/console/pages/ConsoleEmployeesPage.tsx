@@ -4,11 +4,21 @@ import { adminApi } from '../../shared/api';
 import {
   EmptyState,
   ErrorState,
+  InlineNotice,
   LoadingState,
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
+import { getErrorMessage } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 function createEmployeeForm() {
   return {
@@ -25,6 +35,7 @@ export function ConsoleEmployeesPage() {
   const queryClient = useQueryClient();
   const [employeeForm, setEmployeeForm] = useState(createEmployeeForm());
   const [keyword, setKeyword] = useState('');
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const deferredKeyword = useDeferredValue(keyword);
 
   const employeesQuery = useQuery({
@@ -47,6 +58,37 @@ export function ConsoleEmployeesPage() {
     onSuccess: async () => {
       setEmployeeForm(createEmployeeForm());
       await queryClient.invalidateQueries({ queryKey: ['console', 'employees'] });
+      setFeedback({
+        title: employeeForm.id ? '员工已更新' : '员工已新增',
+        body: appCopy.consoleFeedback.saveSuccess('员工'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.saveErrorTitle('员工'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: number }) => adminApi.employeeStatus(status, id),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['console', 'employees'] });
+      setFeedback({
+        title: variables.status === 1 ? '员工已启用' : '员工已停用',
+        body: appCopy.consoleFeedback.statusSuccess('员工', variables.status === 1 ? '启用' : '停用'),
+        tone: 'live',
+      });
+    },
+    onError: (error, variables) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.statusErrorTitle('员工', variables.status === 1 ? '启用' : '停用'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
 
@@ -63,6 +105,8 @@ export function ConsoleEmployeesPage() {
           </div>
         }
       />
+
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       <div className="grid-2">
         <section className="panel section-card">
@@ -97,8 +141,8 @@ export function ConsoleEmployeesPage() {
             </div>
           </div>
           <div className="button-row">
-            <button className="button primary" onClick={() => saveMutation.mutate()} type="button">
-              {employeeForm.id ? '更新员工' : '新增员工'}
+            <button className="button primary" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()} type="button">
+              {saveMutation.isPending ? '保存中…' : employeeForm.id ? '更新员工' : '新增员工'}
             </button>
             <button className="button ghost" onClick={() => setEmployeeForm(createEmployeeForm())} type="button">
               重置
@@ -142,7 +186,8 @@ export function ConsoleEmployeesPage() {
                     </button>
                     <button
                       className="button ghost small"
-                      onClick={() => adminApi.employeeStatus(employee.status === 1 ? 0 : 1, employee.id).then(() => queryClient.invalidateQueries({ queryKey: ['console', 'employees'] }))}
+                      disabled={statusMutation.isPending}
+                      onClick={() => statusMutation.mutate({ id: employee.id, status: employee.status === 1 ? 0 : 1 })}
                       type="button"
                     >
                       {employee.status === 1 ? '停用' : '启用'}

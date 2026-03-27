@@ -4,12 +4,22 @@ import { adminApi } from '../../shared/api';
 import {
   EmptyState,
   ErrorState,
+  InlineNotice,
   LoadingState,
   MetricCard,
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
+import { getErrorMessage } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 function createCategoryForm() {
   return {
@@ -23,6 +33,7 @@ function createCategoryForm() {
 export function ConsoleCategoriesPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(createCategoryForm());
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
   const dishCategoriesQuery = useQuery({
     queryKey: ['console', 'categories', 'dish-page'],
@@ -51,18 +62,58 @@ export function ConsoleCategoriesPage() {
     onSuccess: async () => {
       setForm(createCategoryForm());
       await refreshCategories();
+      setFeedback({
+        title: form.id ? '分类已更新' : '分类已新增',
+        body: appCopy.consoleFeedback.saveSuccess('分类'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.saveErrorTitle('分类'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: number }) =>
       adminApi.categoryStatus(status, id),
-    onSuccess: refreshCategories,
+    onSuccess: async (_, variables) => {
+      await refreshCategories();
+      setFeedback({
+        title: variables.status === 1 ? '分类已启用' : '分类已禁用',
+        body: appCopy.consoleFeedback.statusSuccess('分类', variables.status === 1 ? '启用' : '禁用'),
+        tone: 'live',
+      });
+    },
+    onError: (error, variables) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.statusErrorTitle('分类', variables.status === 1 ? '启用' : '禁用'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteCategory(id),
-    onSuccess: refreshCategories,
+    onSuccess: async () => {
+      await refreshCategories();
+      setFeedback({
+        title: '分类已删除',
+        body: appCopy.consoleFeedback.deleteSuccess('分类'),
+        tone: 'live',
+      });
+    },
+    onError: (error) => {
+      setFeedback({
+        title: appCopy.consoleFeedback.deleteErrorTitle('分类'),
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
   });
 
   const hasError = dishCategoriesQuery.isError || setmealCategoriesQuery.isError;
@@ -88,6 +139,8 @@ export function ConsoleCategoriesPage() {
           </div>
         }
       />
+
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       <div className="grid-2">
         <section className="panel section-card">

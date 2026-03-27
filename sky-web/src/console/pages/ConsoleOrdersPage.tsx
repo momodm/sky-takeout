@@ -4,13 +4,22 @@ import { adminApi, type Orders } from '../../shared/api';
 import {
   EmptyState,
   ErrorState,
+  InlineNotice,
   LoadingState,
   MetricCard,
   PageHero,
   SectionTitle,
   StatusPill,
+  type NoticeTone,
 } from '../../shared/components';
-import { formatCurrency, formatDateTime, getOrderMutationLabel, getOrderStatusLabel, getOrderTone, startOfDayIso } from '../../shared/utils';
+import { appCopy } from '../../shared/copy';
+import { formatCurrency, formatDateTime, getErrorMessage, getOrderMutationLabel, getOrderStatusLabel, getOrderTone, startOfDayIso } from '../../shared/utils';
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+}
 
 function nextOrderAction(order: Orders) {
   if (order.status === 2) {
@@ -45,6 +54,7 @@ export function ConsoleOrdersPage() {
   const [number, setNumber] = useState('');
   const [phone, setPhone] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const deferredFilters = useDeferredValue({ status, number, phone, page, pageSize });
 
   const ordersQuery = useQuery({
@@ -73,24 +83,43 @@ export function ConsoleOrdersPage() {
 
   const confirmMutation = useMutation({
     mutationFn: (id: number) => adminApi.confirmOrder(id),
-    onSuccess: invalidateOrders,
   });
   const deliveryMutation = useMutation({
     mutationFn: (id: number) => adminApi.deliveryOrder(id),
-    onSuccess: invalidateOrders,
   });
   const completeMutation = useMutation({
     mutationFn: (id: number) => adminApi.completeOrder(id),
-    onSuccess: invalidateOrders,
   });
   const rejectMutation = useMutation({
     mutationFn: (id: number) => adminApi.rejectOrder(id, '前台拒单操作'),
-    onSuccess: invalidateOrders,
   });
   const cancelMutation = useMutation({
     mutationFn: (id: number) => adminApi.cancelOrder(id, '后台主动取消订单'),
-    onSuccess: invalidateOrders,
   });
+
+  const runOrderMutation = (
+    actionLabel: string,
+    order: Orders,
+    mutation: typeof confirmMutation,
+  ) => {
+    mutation.mutate(order.id, {
+      onError: (error) => {
+        setFeedback({
+          title: appCopy.consoleFeedback.orderActionErrorTitle(actionLabel),
+          body: getErrorMessage(error),
+          tone: 'fallback',
+        });
+      },
+      onSuccess: async () => {
+        await invalidateOrders();
+        setFeedback({
+          title: `订单已${actionLabel}`,
+          body: appCopy.consoleFeedback.orderActionSuccess(actionLabel, order.number),
+          tone: 'live',
+        });
+      },
+    });
+  };
 
   const selectedOrder = selectedOrderQuery.data;
   const totals = useMemo(() => summaryQuery.data, [summaryQuery.data]);
@@ -112,6 +141,8 @@ export function ConsoleOrdersPage() {
           </div>
         }
       />
+
+      {feedback ? <InlineNotice body={feedback.body} title={feedback.title} tone={feedback.tone} /> : null}
 
       <section className="panel section-card">
         <SectionTitle eyebrow="Filters" title="筛选条件" />
@@ -179,9 +210,9 @@ export function ConsoleOrdersPage() {
                         <button
                           className="button primary small"
                           onClick={() => {
-                            if (action.mutation === 'confirm') confirmMutation.mutate(order.id);
-                            if (action.mutation === 'delivery') deliveryMutation.mutate(order.id);
-                            if (action.mutation === 'complete') completeMutation.mutate(order.id);
+                            if (action.mutation === 'confirm') runOrderMutation('接单', order, confirmMutation);
+                            if (action.mutation === 'delivery') runOrderMutation('派送', order, deliveryMutation);
+                            if (action.mutation === 'complete') runOrderMutation('完成', order, completeMutation);
                           }}
                           type="button"
                         >
@@ -189,12 +220,12 @@ export function ConsoleOrdersPage() {
                         </button>
                       ) : null}
                       {order.status === 2 ? (
-                        <button className="button ghost small" onClick={() => rejectMutation.mutate(order.id)} type="button">
+                        <button className="button ghost small" onClick={() => runOrderMutation('拒单', order, rejectMutation)} type="button">
                           拒单
                         </button>
                       ) : null}
                       {[1, 2, 3].includes(order.status) ? (
-                        <button className="button danger small" onClick={() => cancelMutation.mutate(order.id)} type="button">
+                        <button className="button danger small" onClick={() => runOrderMutation('取消', order, cancelMutation)} type="button">
                           取消
                         </button>
                       ) : null}
