@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
-import type { EChartsOption } from 'echarts';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { initChart, type AppChartOption } from './chart-runtime';
 
 export type NoticeTone = 'default' | 'live' | 'fallback' | 'warning';
 
@@ -43,7 +43,7 @@ interface ChartCardProps {
   eyebrow?: string;
   title: string;
   description?: string;
-  option: EChartsOption;
+  option: AppChartOption;
   height?: number;
   actions?: ReactNode;
 }
@@ -184,9 +184,10 @@ export function AvatarChip({ title, subtitle }: { title: string; subtitle: strin
   );
 }
 
-export function EChart({ option, height = 300 }: { option: EChartsOption; height?: number }) {
+export function EChart({ option, height = 300 }: { option: AppChartOption; height?: number }) {
   const chartId = useId();
   const elementRef = useRef<HTMLDivElement | null>(null);
+  const [chartState, setChartState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     const element = elementRef.current;
@@ -197,24 +198,31 @@ export function EChart({ option, height = 300 }: { option: EChartsOption; height
     let disposed = false;
     let cleanup = () => {};
 
-    void import('echarts').then((module) => {
-      if (disposed) {
-        return;
-      }
+    void initChart(element, undefined, { renderer: 'canvas' })
+      .then((chart) => {
+        if (disposed) {
+          chart.dispose();
+          return;
+        }
 
-      const chart = module.init(element, undefined, { renderer: 'canvas' });
-      chart.setOption(option);
+        chart.setOption(option);
+        setChartState('ready');
 
-      const resizeObserver = new ResizeObserver(() => {
-        chart.resize();
+        const resizeObserver = new ResizeObserver(() => {
+          chart.resize();
+        });
+        resizeObserver.observe(element);
+
+        cleanup = () => {
+          resizeObserver.disconnect();
+          chart.dispose();
+        };
+      })
+      .catch(() => {
+        if (!disposed) {
+          setChartState('error');
+        }
       });
-      resizeObserver.observe(element);
-
-      cleanup = () => {
-        resizeObserver.disconnect();
-        chart.dispose();
-      };
-    });
 
     return () => {
       disposed = true;
@@ -222,5 +230,26 @@ export function EChart({ option, height = 300 }: { option: EChartsOption; height
     };
   }, [chartId, option]);
 
-  return <div className="chart-shell" ref={elementRef} style={{ height }} />;
+  return (
+    <div className="chart-shell-wrapper" style={{ height }}>
+      {chartState === 'loading' ? (
+        <div className="chart-shell-placeholder" role="status">
+          <div className="loading-bar" />
+          <span className="soft-copy">图表模块正在按需加载。</span>
+        </div>
+      ) : null}
+      {chartState === 'error' ? (
+        <div className="chart-shell-placeholder chart-shell-error" role="alert">
+          <strong>图表加载失败</strong>
+          <span className="soft-copy">可以先查看右侧指标卡，稍后再刷新当前页面。</span>
+        </div>
+      ) : null}
+      <div
+        aria-hidden={chartState !== 'ready'}
+        className={`chart-shell${chartState === 'ready' ? ' ready' : ''}`}
+        ref={elementRef}
+        style={{ height }}
+      />
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import type { EChartsOption } from 'echarts';
 import { adminApi } from '../../shared/api';
+import type { AppChartOption } from '../../shared/chart-runtime';
 import { ChartCard, ErrorState, InlineNotice, MetricCard, PageHero } from '../../shared/components';
 import {
   downloadBlob,
@@ -41,7 +41,7 @@ export function ConsoleReportsPage() {
   });
   const hasError = turnoverQuery.isError || userQuery.isError || ordersQuery.isError || top10Query.isError;
 
-  const turnoverOption = useMemo<EChartsOption>(() => {
+  const turnoverOption = useMemo<AppChartOption>(() => {
     const points = toChartPoints(turnoverQuery.data?.dateList, turnoverQuery.data?.turnoverList);
     return {
       tooltip: { trigger: 'axis' },
@@ -59,7 +59,7 @@ export function ConsoleReportsPage() {
     };
   }, [turnoverQuery.data?.dateList, turnoverQuery.data?.turnoverList]);
 
-  const userOption = useMemo<EChartsOption>(() => {
+  const userOption = useMemo<AppChartOption>(() => {
     const labels = (userQuery.data?.dateList || '').split(',').filter(Boolean);
     const newUsers = (userQuery.data?.newUserList || '').split(',').map(Number);
     const totalUsers = (userQuery.data?.totalUserList || '').split(',').map(Number);
@@ -75,7 +75,7 @@ export function ConsoleReportsPage() {
     };
   }, [userQuery.data?.dateList, userQuery.data?.newUserList, userQuery.data?.totalUserList]);
 
-  const top10Option = useMemo<EChartsOption>(() => {
+  const top10Option = useMemo<AppChartOption>(() => {
     const labels = (top10Query.data?.nameList || '').split(',').filter(Boolean);
     const values = (top10Query.data?.numberList || '').split(',').map(Number);
     return {

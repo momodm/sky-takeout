@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { EChartsOption } from 'echarts';
 import { adminApi, type WsReminderEvent } from '../../shared/api';
+import type { AppChartOption } from '../../shared/chart-runtime';
 import {
   ChartCard,
   ErrorState,
@@ -62,7 +62,7 @@ export function ConsoleWorkspacePage() {
     };
   }, []);
 
-  const orderMixOption = useMemo<EChartsOption>(() => {
+  const orderMixOption = useMemo<AppChartOption>(() => {
     const stats = orderStatisticsQuery.data;
     return {
       tooltip: { trigger: 'item' },
@@ -84,7 +84,7 @@ export function ConsoleWorkspacePage() {
     };
   }, [orderStatisticsQuery.data]);
 
-  const supplyOption = useMemo<EChartsOption>(() => {
+  const supplyOption = useMemo<AppChartOption>(() => {
     const overview = overviewQuery.data;
     return {
       tooltip: { trigger: 'axis' },

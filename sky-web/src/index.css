@@ -878,9 +878,43 @@ tbody tr:hover {
   min-height: 360px;
 }
 
+.chart-shell-wrapper {
+  position: relative;
+  min-height: 300px;
+}
+
 .chart-shell {
   width: 100%;
   height: 300px;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.chart-shell.ready {
+  opacity: 1;
+}
+
+.chart-shell-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  border: 1px dashed rgba(23, 36, 48, 0.12);
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.84), rgba(255, 255, 255, 0.92));
+}
+
+.chart-shell-placeholder .loading-bar {
+  max-width: 320px;
+}
+
+.chart-shell-error {
+  border-style: solid;
+  border-color: rgba(187, 77, 64, 0.16);
+  background: rgba(187, 77, 64, 0.08);
+  text-align: center;
 }
 
 .login-shell {
