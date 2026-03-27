@@ -1,0 +1,10 @@
+export { ConsoleLoginPage } from './ConsoleLoginPage';
+export { ConsoleWorkspacePage } from './ConsoleWorkspacePage';
+export { ConsoleOrdersPage } from './ConsoleOrdersPage';
+export { ConsoleCatalogPage } from './ConsoleCatalogPage';
+export { ConsoleCategoriesPage } from './ConsoleCategoriesPage';
+export { ConsoleDishesPage } from './ConsoleDishesPage';
+export { ConsoleSetmealsPage } from './ConsoleSetmealsPage';
+export { ConsoleShopPage } from './ConsoleShopPage';
+export { ConsoleReportsPage } from './ConsoleReportsPage';
+export { ConsoleEmployeesPage } from './ConsoleEmployeesPage';

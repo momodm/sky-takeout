@@ -16,9 +16,14 @@ logs/
 Thumbs.db
 
 # Nginx (Ignore binaries and temp files)
-nginx/
+nginx/*
+!nginx/conf/
+nginx/conf/*
 !nginx/conf/nginx.conf
+!nginx/html/
+nginx/html/*
 !nginx/html/sky/
+!nginx/html/sky/**
 
 # MySQL Data (Local dev only)
 mysql_data/
