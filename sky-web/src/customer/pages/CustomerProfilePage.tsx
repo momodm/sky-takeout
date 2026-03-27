@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MetricCard, PageHero, SectionTitle } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
 import { useCustomerShell } from '../CustomerShell';
 
 export function CustomerProfilePage() {
@@ -9,8 +10,8 @@ export function CustomerProfilePage() {
     <div className="page-grid">
       <PageHero
         eyebrow="Customer / Profile"
-        title="个人区负责把当前会话状态讲清楚"
-        description="第一版个人区不追求做得很重，重点是把当前用户、门店状态和常用入口都放在一块，方便联调。"
+        title={appCopy.customerProfile.heroTitle}
+        description={appCopy.customerProfile.heroDescription}
         actions={
           <>
             <Link className="button primary" to="/customer">

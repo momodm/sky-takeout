@@ -1,4 +1,4 @@
-import { startTransition, useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { userApi, type AddressBook, type DishVO, type ShoppingCart } from '../../shared/api';
@@ -8,15 +8,18 @@ import {
   InlineNotice,
   LoadingState,
   MetricCard,
+  type NoticeTone,
   PageHero,
   SectionTitle,
   StatusPill,
 } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
 import { useCustomerShell } from '../CustomerShell';
 import {
   buildFlavorSelection,
   formatCurrency,
   formatNumber,
+  getErrorMessage,
   normalizeImage,
   parseFlavorValues,
   summarizeCart,
@@ -25,6 +28,38 @@ import {
 interface DishSelectionState {
   dish: DishVO;
   values: Record<string, string>;
+}
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+  action?: {
+    label: string;
+    to: string;
+    state?: unknown;
+  };
+}
+
+function FeedbackNotice({ feedback }: { feedback: FeedbackState | null }) {
+  if (!feedback) {
+    return null;
+  }
+
+  return (
+    <InlineNotice
+      actions={
+        feedback.action ? (
+          <Link className="button secondary small" state={feedback.action.state} to={feedback.action.to}>
+            {feedback.action.label}
+          </Link>
+        ) : undefined
+      }
+      body={feedback.body}
+      title={feedback.title}
+      tone={feedback.tone}
+    />
+  );
 }
 
 function DishFlavorModal({
@@ -36,13 +71,15 @@ function DishFlavorModal({
   onClose: () => void;
   onConfirm: (value: Record<string, string>) => void;
 }) {
+  const [values, setValues] = useState<Record<string, string>>(() => selection.values);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-header">
           <span className="eyebrow warning">Flavor Builder</span>
           <h3>{selection.dish.name}</h3>
-          <p className="soft-copy">带口味的菜品会把你当前选中的规格拼成 dishFlavor，保证购物车和订单明细都能完整回显。</p>
+          <p className="soft-copy">带口味的菜品会把当前规格拼成 `dishFlavor`，确保购物车和订单详情都能完整回显。</p>
         </div>
 
         <div className="stack">
@@ -53,10 +90,13 @@ function DishFlavorModal({
                 <label htmlFor={flavor.name}>{flavor.name}</label>
                 <select
                   id={flavor.name}
-                  onChange={(event) => {
-                    selection.values[flavor.name] = event.target.value;
-                  }}
-                  value={selection.values[flavor.name] ?? options[0]}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [flavor.name]: event.target.value,
+                    }))
+                  }
+                  value={values[flavor.name] ?? options[0]}
                 >
                   {options.map((option) => (
                     <option key={option} value={option}>
@@ -70,7 +110,7 @@ function DishFlavorModal({
         </div>
 
         <div className="button-row" style={{ marginTop: 18 }}>
-          <button className="button primary" onClick={() => onConfirm({ ...selection.values })} type="button">
+          <button className="button primary" onClick={() => onConfirm(values)} type="button">
             加入购物车
           </button>
           <button className="button secondary" onClick={onClose} type="button">
@@ -86,6 +126,9 @@ function CartDrawer({
   address,
   canCheckout,
   cartItems,
+  feedback,
+  isMutating,
+  isSubmitting,
   onAdd,
   onClose,
   onClean,
@@ -101,6 +144,9 @@ function CartDrawer({
   address: AddressBook | undefined;
   canCheckout: boolean;
   cartItems: ShoppingCart[];
+  feedback: FeedbackState | null;
+  isMutating: boolean;
+  isSubmitting: boolean;
   onAdd: (item: ShoppingCart) => void;
   onClose: () => void;
   onClean: () => void;
@@ -120,12 +166,14 @@ function CartDrawer({
       <div className="drawer-card" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-header">
           <span className="eyebrow warning">Cart & Checkout</span>
-          <h3>购物车与提交订单</h3>
-          <p className="soft-copy">这里直接串上购物车、默认地址、备注和提交订单接口，方便你马上从顾客视角走闭环。</p>
+          <h3>{appCopy.customerHome.cartTitle}</h3>
+          <p className="soft-copy">{appCopy.customerHome.cartDescription}</p>
         </div>
 
+        <FeedbackNotice feedback={feedback} />
+
         {!cartItems.length ? (
-          <EmptyState body="先选几道菜，购物车才会在这里出现真实明细。" title="购物车还空着" />
+          <EmptyState body={appCopy.customerHome.emptyCartBody} title={appCopy.customerHome.emptyCartTitle} />
         ) : (
           <div className="stack">
             {cartItems.map((item) => (
@@ -139,10 +187,10 @@ function CartDrawer({
                 </div>
                 <div className="row-between">
                   <div className="button-row">
-                    <button className="button secondary small" onClick={() => onSub(item)} type="button">
+                    <button className="button secondary small" disabled={isMutating} onClick={() => onSub(item)} type="button">
                       -1
                     </button>
-                    <button className="button secondary small" onClick={() => onAdd(item)} type="button">
+                    <button className="button secondary small" disabled={isMutating} onClick={() => onAdd(item)} type="button">
                       +1
                     </button>
                   </div>
@@ -167,29 +215,51 @@ function CartDrawer({
               </div>
               <div className="field">
                 <label htmlFor="pack">打包费</label>
-                <input id="pack" onChange={(event) => setPackAmount(event.target.value)} value={packAmount} />
+                <input
+                  id="pack"
+                  inputMode="decimal"
+                  min="0"
+                  onChange={(event) => setPackAmount(event.target.value)}
+                  step="0.5"
+                  type="number"
+                  value={packAmount}
+                />
               </div>
             </div>
 
             <InlineNotice
-              body={address
-                ? `${address.provinceName}${address.cityName}${address.districtName}${address.detail}`
-                : '还没有默认地址，点右下角去地址簿补一个。'}
-              title={address ? `默认地址 · ${address.consignee}` : '默认地址未设置'}
+              actions={
+                !address ? (
+                  <Link className="button secondary small" state={{ fromCheckout: true }} to="/customer/addresses">
+                    {appCopy.customerHome.noDefaultAddressAction}
+                  </Link>
+                ) : undefined
+              }
+              body={
+                address
+                  ? `${address.provinceName}${address.cityName}${address.districtName}${address.detail}`
+                  : appCopy.customerHome.noDefaultAddressBody
+              }
+              title={address ? appCopy.customerHome.addressReady(address.consignee) : appCopy.customerHome.noDefaultAddressTitle}
               tone={address ? 'live' : 'warning'}
             />
 
             <div className="row-between">
               <div className="stack" style={{ gap: 4 }}>
                 <strong>应付总额 {formatCurrency(cartSummary.amount + Number(packAmount || 0))}</strong>
-                <span className="soft-copy">提交后不会自动支付，你可以去订单中心触发 mock 支付。</span>
+                <span className="soft-copy">{appCopy.customerHome.checkoutHint}</span>
               </div>
               <div className="button-row">
-                <button className="button ghost" onClick={onClean} type="button">
-                  清空购物车
+                <button className="button ghost" disabled={isMutating || isSubmitting} onClick={onClean} type="button">
+                  {appCopy.customerHome.clearCart}
                 </button>
-                <button className="button primary" disabled={!canCheckout || !address} onClick={onSubmit} type="button">
-                  提交订单
+                {!address ? (
+                  <Link className="button secondary" state={{ fromCheckout: true }} to="/customer/addresses">
+                    {appCopy.customerHome.noDefaultAddressAction}
+                  </Link>
+                ) : null}
+                <button className="button primary" disabled={!canCheckout || !address || isSubmitting} onClick={onSubmit} type="button">
+                  {isSubmitting ? appCopy.customerHome.submittingOrder : appCopy.customerHome.submitOrder}
                 </button>
               </div>
             </div>
@@ -211,7 +281,9 @@ export function CustomerHomePage() {
   const [tablewareNumber, setTablewareNumber] = useState('2');
   const [packAmount, setPackAmount] = useState('2');
   const [pendingDish, setPendingDish] = useState<DishSelectionState | null>(null);
-  const [, startTabTransition] = useTransition();
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [, startDishTransition] = useTransition();
+  const [, startSetmealTransition] = useTransition();
 
   const dishCategoriesQuery = useQuery({
     queryKey: ['customer', 'categories', 'dish'],
@@ -243,9 +315,13 @@ export function CustomerHomePage() {
     enabled: Boolean(resolvedSetmealCategoryId),
   });
 
+  const refreshCart = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['customer', 'cart'] });
+  };
+
   const invalidateCustomerQueries = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['customer', 'cart'] }),
+      refreshCart(),
       queryClient.invalidateQueries({ queryKey: ['customer', 'orders'] }),
       queryClient.invalidateQueries({ queryKey: ['customer', 'address'] }),
     ]);
@@ -253,25 +329,13 @@ export function CustomerHomePage() {
 
   const addCartMutation = useMutation({
     mutationFn: (payload: { dishId?: number; setmealId?: number; dishFlavor?: string }) => userApi.cartAdd(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', 'cart'] });
-    },
   });
-
   const subCartMutation = useMutation({
     mutationFn: (payload: { dishId?: number; setmealId?: number; dishFlavor?: string }) => userApi.cartSub(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', 'cart'] });
-    },
   });
-
   const cleanCartMutation = useMutation({
     mutationFn: () => userApi.cartClean(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', 'cart'] });
-    },
   });
-
   const submitOrderMutation = useMutation({
     mutationFn: () => {
       const address = defaultAddressQuery.data;
@@ -288,23 +352,98 @@ export function CustomerHomePage() {
         tablewareNumber: Number(tablewareNumber || 1),
       });
     },
-    onSuccess: async () => {
+    onError: (error) => {
+      setFeedback({
+        title: '提交订单失败',
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
+    onSuccess: async (result) => {
       setCartOpen(false);
       setRemark('');
+      setFeedback(null);
       await invalidateCustomerQueries();
-      navigate('/customer/orders');
+      navigate('/customer/orders', {
+        state: {
+          flash: {
+            title: appCopy.customerOrders.createdFromCheckoutTitle,
+            body: appCopy.customerHome.submitSuccessBody(result.orderNumber),
+            tone: 'live',
+          },
+        },
+      });
     },
   });
 
   const cartItems = useMemo(() => cartQuery.data ?? [], [cartQuery.data]);
   const cartSummary = useMemo(() => summarizeCart(cartItems), [cartItems]);
-  const canCheckout = cartSummary.count > 0 && shopStatus === 1;
+  const hasDefaultAddress = Boolean(defaultAddressQuery.data);
+  const canCheckout = cartSummary.count > 0 && shopStatus === 1 && hasDefaultAddress;
+  const cartMutating = addCartMutation.isPending || subCartMutation.isPending || cleanCartMutation.isPending;
   const hasCatalogError =
     dishCategoriesQuery.isError ||
     setmealCategoriesQuery.isError ||
     cartQuery.isError ||
     dishesQuery.isError ||
     setmealsQuery.isError;
+
+  const setActionError = (error: unknown, title = '操作失败') => {
+    setFeedback({
+      title,
+      body: getErrorMessage(error),
+      tone: 'fallback',
+    });
+  };
+
+  const runAddCart = (payload: { dishId?: number; setmealId?: number; dishFlavor?: string }, label: string) => {
+    addCartMutation.mutate(payload, {
+      onError: (error) => setActionError(error, '加入购物车失败'),
+      onSuccess: async () => {
+        await refreshCart();
+        setFeedback({
+          title: appCopy.customerHome.addSuccessTitle,
+          body: appCopy.customerHome.addSuccessBody(label),
+          tone: 'live',
+        });
+      },
+    });
+  };
+
+  const runSubCart = (item: ShoppingCart) => {
+    subCartMutation.mutate(
+      {
+        dishId: item.dishId,
+        setmealId: item.setmealId,
+        dishFlavor: item.dishFlavor,
+      },
+      {
+        onError: (error) => setActionError(error, '更新购物车失败'),
+        onSuccess: async () => {
+          await refreshCart();
+          setFeedback({
+            title: appCopy.customerHome.removeSuccessTitle,
+            body: appCopy.customerHome.removeSuccessBody(item.name),
+            tone: 'live',
+          });
+        },
+      },
+    );
+  };
+
+  const runCleanCart = () => {
+    cleanCartMutation.mutate(undefined, {
+      onError: (error) => setActionError(error, '清空购物车失败'),
+      onSuccess: async () => {
+        await refreshCart();
+        setFeedback({
+          title: appCopy.customerHome.clearSuccessTitle,
+          body: appCopy.customerHome.clearSuccessBody,
+          tone: 'live',
+        });
+      },
+    });
+  };
 
   const onAddDish = (dish: DishVO) => {
     if (dish.flavors.length) {
@@ -316,53 +455,70 @@ export function CustomerHomePage() {
       return;
     }
 
-    addCartMutation.mutate({ dishId: dish.id });
+    runAddCart({ dishId: dish.id }, dish.name);
   };
 
   return (
     <div className="page-grid">
       <PageHero
         eyebrow="Customer / Order Flow"
-        title="把菜品流、套餐区和购物车做成真正能下单的移动端首页"
-        description="顾客端这版优先保证真正能点单：营业状态、分类、菜品、套餐、购物车、地址簿和订单动作都直接连现在的 user 接口。"
+        title={appCopy.customerHome.heroTitle}
+        description={appCopy.customerHome.heroDescription}
         actions={
           <>
             <button className="button primary" onClick={() => setCartOpen(true)} type="button">
-              打开购物车
+              {appCopy.customerHome.openCart}
             </button>
             <Link className="button secondary" to="/customer/orders">
-              查看订单
+              {appCopy.customerHome.viewOrders}
             </Link>
           </>
         }
         aside={
           <div className="metrics-grid">
-            <MetricCard hint="来自购物车实时汇总" label="购物车件数" value={formatNumber(cartSummary.count)} />
-            <MetricCard hint="当前结算口径" label="当前合计" tone="support" value={formatCurrency(cartSummary.amount)} />
-            <MetricCard hint="当前默认地址" label="收货地址" value={defaultAddressQuery.data ? '已就绪' : '未设置'} />
-            <MetricCard hint="mock 登录已接现有 user token" label="当前顾客" value={currentUser ? `#${currentUser.id}` : '待连接'} />
+            <MetricCard hint={appCopy.customerHome.cartCountHint} label={appCopy.customerHome.cartCountLabel} value={formatNumber(cartSummary.count)} />
+            <MetricCard
+              hint={appCopy.customerHome.cartAmountHint}
+              label={appCopy.customerHome.cartAmountLabel}
+              tone="support"
+              value={formatCurrency(cartSummary.amount)}
+            />
+            <MetricCard hint={appCopy.customerHome.addressHint} label={appCopy.customerHome.addressLabel} value={hasDefaultAddress ? '已就绪' : '未设置'} />
+            <MetricCard hint={appCopy.customerHome.userHint} label={appCopy.customerHome.userLabel} value={currentUser ? `#${currentUser.id}` : '待连接'} />
           </div>
         }
       />
 
+      {!cartOpen ? <FeedbackNotice feedback={feedback} /> : null}
+
       {shopStatus !== 1 ? (
-        <InlineNotice body="后端返回店铺当前不营业，所以首页仍可浏览，但会禁用提交订单。" title="店铺当前打烊中" tone="warning" />
+        <InlineNotice body={appCopy.customerHome.shopClosedBody} title={appCopy.customerHome.shopClosedTitle} tone="warning" />
       ) : (
-        <InlineNotice body="当前门店营业正常，你可以直接把菜品或套餐加入购物车，再提交订单。" title="门店状态正常" tone="live" />
+        <InlineNotice body={appCopy.customerHome.shopOpenBody} title={appCopy.customerHome.shopOpenTitle} tone="live" />
       )}
 
-      {hasCatalogError ? (
-        <ErrorState
-          body="顾客端分类、菜品、套餐或购物车接口暂时不可用，请先确认后端 8080 与用户端接口已经启动。"
-          title="点餐首页加载失败"
+      {!hasDefaultAddress && cartSummary.count > 0 ? (
+        <InlineNotice
+          actions={
+            <Link className="button secondary small" state={{ fromCheckout: true }} to="/customer/addresses">
+              {appCopy.customerHome.noDefaultAddressAction}
+            </Link>
+          }
+          body={appCopy.customerHome.noDefaultAddressBody}
+          title={appCopy.customerHome.noDefaultAddressTitle}
+          tone="warning"
         />
+      ) : null}
+
+      {hasCatalogError ? (
+        <ErrorState body={appCopy.customerHome.serviceErrorBody} title={appCopy.customerHome.serviceErrorTitle} />
       ) : (
         <div className="customer-grid">
           <section className="panel section-card">
             <SectionTitle
               eyebrow="Pick Dishes"
-              title="今日点什么"
-              description="分类切换会触发对应接口查询；为了让移动端单手操作更顺，分类和菜品都尽量压成卡片流。"
+              title={appCopy.customerHome.dishSectionTitle}
+              description={appCopy.customerHome.dishSectionDescription}
               actions={
                 <div className="button-row">
                   <StatusPill tone="live">菜品分类 {dishCategoriesQuery.data?.length ?? 0}</StatusPill>
@@ -381,7 +537,7 @@ export function CustomerHomePage() {
                       className={`tab-button${resolvedDishCategoryId === category.id ? ' active' : ''}`}
                       key={category.id}
                       onClick={() => {
-                        startTabTransition(() => {
+                        startDishTransition(() => {
                           setActiveDishCategoryId(category.id);
                         });
                       }}
@@ -415,7 +571,7 @@ export function CustomerHomePage() {
                           </div>
                           <div className="price-row">
                             <span className="price-tag">{formatCurrency(dish.price)}</span>
-                            <button className="button primary small" onClick={() => onAddDish(dish)} type="button">
+                            <button className="button primary small" disabled={cartMutating} onClick={() => onAddDish(dish)} type="button">
                               加入购物车
                             </button>
                           </div>
@@ -433,63 +589,64 @@ export function CustomerHomePage() {
           </section>
 
           <section className="panel section-card">
-          <SectionTitle
-            eyebrow="Setmeal"
-            title="套餐专区"
-            description="套餐专区会继续使用现有 user/setmeal/list。第一版先把列表、加购和价格反馈做顺。"
-          />
+            <SectionTitle
+              eyebrow="Setmeal"
+              title={appCopy.customerHome.setmealSectionTitle}
+              description={appCopy.customerHome.setmealSectionDescription}
+            />
 
-          {setmealCategoriesQuery.isLoading ? (
-            <LoadingState body="正在读取套餐分类。" />
-          ) : setmealCategoriesQuery.data?.length ? (
-            <div className="stack">
-              <div className="tabs">
-                {setmealCategoriesQuery.data.map((category) => (
-                  <button
-                    className={`tab-button${resolvedSetmealCategoryId === category.id ? ' active' : ''}`}
-                    key={category.id}
-                    onClick={() => {
-                      startTransition(() => {
-                        setActiveSetmealCategoryId(category.id);
-                      });
-                    }}
-                    type="button"
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-
-              {setmealsQuery.isLoading ? (
-                <LoadingState body="正在拉取套餐列表。" />
-              ) : setmealsQuery.data?.length ? (
-                <div className="stack">
-                  {setmealsQuery.data.map((setmeal) => (
-                    <article className="order-card" key={setmeal.id}>
-                      <div className="row-between">
-                        <div className="stack" style={{ gap: 4 }}>
-                          <strong>{setmeal.name}</strong>
-                          <span className="soft-copy">{setmeal.description || '轻量套餐卡会把重点放在价格和下单速度。'}</span>
-                        </div>
-                        <strong>{formatCurrency(setmeal.price)}</strong>
-                      </div>
-                      <button
-                        className="button secondary"
-                        onClick={() => addCartMutation.mutate({ setmealId: setmeal.id })}
-                        type="button"
-                      >
-                        加入套餐
-                      </button>
-                    </article>
+            {setmealCategoriesQuery.isLoading ? (
+              <LoadingState body="正在读取套餐分类。" />
+            ) : setmealCategoriesQuery.data?.length ? (
+              <div className="stack">
+                <div className="tabs">
+                  {setmealCategoriesQuery.data.map((category) => (
+                    <button
+                      className={`tab-button${resolvedSetmealCategoryId === category.id ? ' active' : ''}`}
+                      key={category.id}
+                      onClick={() => {
+                        startSetmealTransition(() => {
+                          setActiveSetmealCategoryId(category.id);
+                        });
+                      }}
+                      type="button"
+                    >
+                      {category.name}
+                    </button>
                   ))}
                 </div>
-              ) : (
-                <EmptyState body="当前套餐分类下还没有可售套餐。" title="套餐区暂时为空" />
-              )}
-            </div>
-          ) : (
-            <EmptyState body="请先在后台创建套餐分类和套餐。" title="顾客端还没有套餐" />
-          )}
+
+                {setmealsQuery.isLoading ? (
+                  <LoadingState body="正在拉取套餐列表。" />
+                ) : setmealsQuery.data?.length ? (
+                  <div className="stack">
+                    {setmealsQuery.data.map((setmeal) => (
+                      <article className="order-card" key={setmeal.id}>
+                        <div className="row-between">
+                          <div className="stack" style={{ gap: 4 }}>
+                            <strong>{setmeal.name}</strong>
+                            <span className="soft-copy">{setmeal.description || '轻量套餐卡会把重点放在价格和下单速度。'}</span>
+                          </div>
+                          <strong>{formatCurrency(setmeal.price)}</strong>
+                        </div>
+                        <button
+                          className="button secondary"
+                          disabled={cartMutating}
+                          onClick={() => runAddCart({ setmealId: setmeal.id }, setmeal.name)}
+                          type="button"
+                        >
+                          加入套餐
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState body="当前套餐分类下还没有可售套餐。" title="套餐区暂时为空" />
+                )}
+              </div>
+            ) : (
+              <EmptyState body="请先在后台创建套餐分类和套餐。" title="顾客端还没有套餐" />
+            )}
           </section>
         </div>
       )}
@@ -497,15 +654,25 @@ export function CustomerHomePage() {
       <div className="sticky-cart-bar panel-subtle">
         <div className="stack" style={{ gap: 4 }}>
           <strong>购物车已选 {formatNumber(cartSummary.count)} 件</strong>
-          <span className="soft-copy">当前金额 {formatCurrency(cartSummary.amount)}，默认地址 {defaultAddressQuery.data ? '已准备好' : '还没设置'}。</span>
+          <span className="soft-copy">当前金额 {formatCurrency(cartSummary.amount)}，默认地址 {hasDefaultAddress ? '已准备好' : '还没设置'}。</span>
         </div>
         <div className="button-row">
           <button className="button secondary" onClick={() => setCartOpen(true)} type="button">
-            查看明细
+            {appCopy.customerHome.stickyDetails}
           </button>
-          <button className="button primary" disabled={!canCheckout} onClick={() => setCartOpen(true)} type="button">
-            {canCheckout ? '去结算' : '暂不可下单'}
-          </button>
+          {cartSummary.count === 0 ? (
+            <button className="button primary" disabled type="button">
+              {appCopy.customerHome.stickyEmpty}
+            </button>
+          ) : !hasDefaultAddress && shopStatus === 1 ? (
+            <Link className="button primary" state={{ fromCheckout: true }} to="/customer/addresses">
+              {appCopy.customerHome.stickyAddressAction}
+            </Link>
+          ) : (
+            <button className="button primary" disabled={!canCheckout} onClick={() => setCartOpen(true)} type="button">
+              {canCheckout ? appCopy.customerHome.stickyCheckout : appCopy.customerHome.stickyClosed}
+            </button>
+          )}
         </div>
       </div>
 
@@ -514,12 +681,24 @@ export function CustomerHomePage() {
           address={defaultAddressQuery.data}
           canCheckout={canCheckout}
           cartItems={cartItems}
-          onAdd={(item) => addCartMutation.mutate({ dishId: item.dishId, setmealId: item.setmealId, dishFlavor: item.dishFlavor })}
-          onClean={() => cleanCartMutation.mutate()}
+          feedback={feedback}
+          isMutating={cartMutating}
+          isSubmitting={submitOrderMutation.isPending}
+          onAdd={(item) =>
+            runAddCart(
+              {
+                dishId: item.dishId,
+                setmealId: item.setmealId,
+                dishFlavor: item.dishFlavor,
+              },
+              item.name,
+            )
+          }
+          onClean={runCleanCart}
           onClose={() => setCartOpen(false)}
           onRemarkChange={setRemark}
           onSubmit={() => submitOrderMutation.mutate()}
-          onSub={(item) => subCartMutation.mutate({ dishId: item.dishId, setmealId: item.setmealId, dishFlavor: item.dishFlavor })}
+          onSub={(item) => runSubCart(item)}
           packAmount={packAmount}
           remark={remark}
           setPackAmount={setPackAmount}
@@ -532,10 +711,13 @@ export function CustomerHomePage() {
         <DishFlavorModal
           onClose={() => setPendingDish(null)}
           onConfirm={(selection) => {
-            addCartMutation.mutate({
-              dishId: pendingDish.dish.id,
-              dishFlavor: buildFlavorSelection(pendingDish.dish.flavors, selection),
-            });
+            runAddCart(
+              {
+                dishId: pendingDish.dish.id,
+                dishFlavor: buildFlavorSelection(pendingDish.dish.flavors, selection),
+              },
+              pendingDish.dish.name,
+            );
             setPendingDish(null);
           }}
           selection={pendingDish}

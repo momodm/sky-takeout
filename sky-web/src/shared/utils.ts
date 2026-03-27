@@ -164,6 +164,10 @@ export function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+export function getErrorMessage(error: unknown, fallback = '操作失败，请稍后再试。') {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function getOrderStatusLabel(status: number | null | undefined) {
   switch (status) {
     case 1:
@@ -196,6 +200,10 @@ export function getOrderTone(status: number | null | undefined) {
     default:
       return 'demo';
   }
+}
+
+export function getPayStatusLabel(payStatus: number | null | undefined) {
+  return payStatus === 1 ? '已支付' : '待支付';
 }
 
 export function getReadableWsType(type: string | null | undefined) {

@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation } from 'react-router-dom';
 import { userApi, type AddressBook } from '../../shared/api';
 import {
   EmptyState,
   ErrorState,
+  InlineNotice,
   LoadingState,
+  type NoticeTone,
   PageHero,
   StatusPill,
 } from '../../shared/components';
+import { appCopy } from '../../shared/copy';
+import { getErrorMessage } from '../../shared/utils';
 
 interface AddressFormState {
   id?: number;
@@ -20,6 +25,16 @@ interface AddressFormState {
   detail: string;
   label: string;
   isDefault: boolean;
+}
+
+interface FeedbackState {
+  title: string;
+  body: string;
+  tone: NoticeTone;
+  action?: {
+    label: string;
+    to: string;
+  };
 }
 
 function createAddressFormState(address?: AddressBook | null): AddressFormState {
@@ -37,14 +52,37 @@ function createAddressFormState(address?: AddressBook | null): AddressFormState 
   };
 }
 
+function FeedbackNotice({ feedback }: { feedback: FeedbackState | null }) {
+  if (!feedback) {
+    return null;
+  }
+
+  return (
+    <InlineNotice
+      actions={
+        feedback.action ? (
+          <Link className="button secondary small" to={feedback.action.to}>
+            {feedback.action.label}
+          </Link>
+        ) : undefined
+      }
+      body={feedback.body}
+      title={feedback.title}
+      tone={feedback.tone}
+    />
+  );
+}
+
 function AddressFormModal({
   initialValue,
   onClose,
   onSubmit,
+  pending,
 }: {
   initialValue?: AddressBook | null;
   onClose: () => void;
   onSubmit: (value: AddressFormState) => void;
+  pending: boolean;
 }) {
   const [form, setForm] = useState<AddressFormState>(() => createAddressFormState(initialValue));
 
@@ -53,18 +91,29 @@ function AddressFormModal({
       <div className="modal-card" onClick={(event) => event.stopPropagation()}>
         <div className="sheet-header">
           <span className="eyebrow support">{form.id ? 'Edit Address' : 'New Address'}</span>
-          <h3>{form.id ? '更新送达地址' : '新增收货地址'}</h3>
-          <p className="soft-copy">前端会先保存地址，再按你的选择切换默认地址。</p>
+          <h3>{form.id ? appCopy.customerAddresses.modalEditTitle : appCopy.customerAddresses.modalCreateTitle}</h3>
+          <p className="soft-copy">{appCopy.customerAddresses.modalDescription}</p>
         </div>
 
         <div className="field-grid">
           <div className="field">
             <label htmlFor="consignee">收货人</label>
-            <input id="consignee" onChange={(event) => setForm((current) => ({ ...current, consignee: event.target.value }))} value={form.consignee} />
+            <input
+              autoComplete="name"
+              id="consignee"
+              onChange={(event) => setForm((current) => ({ ...current, consignee: event.target.value }))}
+              value={form.consignee}
+            />
           </div>
           <div className="field">
             <label htmlFor="phone">手机号</label>
-            <input id="phone" onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} value={form.phone} />
+            <input
+              autoComplete="tel"
+              id="phone"
+              inputMode="tel"
+              onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+              value={form.phone}
+            />
           </div>
           <div className="field">
             <label htmlFor="sex">性别</label>
@@ -84,15 +133,30 @@ function AddressFormModal({
           </div>
           <div className="field">
             <label htmlFor="province">省份</label>
-            <input id="province" onChange={(event) => setForm((current) => ({ ...current, provinceName: event.target.value }))} value={form.provinceName} />
+            <input
+              autoComplete="address-level1"
+              id="province"
+              onChange={(event) => setForm((current) => ({ ...current, provinceName: event.target.value }))}
+              value={form.provinceName}
+            />
           </div>
           <div className="field">
             <label htmlFor="city">城市</label>
-            <input id="city" onChange={(event) => setForm((current) => ({ ...current, cityName: event.target.value }))} value={form.cityName} />
+            <input
+              autoComplete="address-level2"
+              id="city"
+              onChange={(event) => setForm((current) => ({ ...current, cityName: event.target.value }))}
+              value={form.cityName}
+            />
           </div>
           <div className="field">
             <label htmlFor="district">区县</label>
-            <input id="district" onChange={(event) => setForm((current) => ({ ...current, districtName: event.target.value }))} value={form.districtName} />
+            <input
+              autoComplete="address-level3"
+              id="district"
+              onChange={(event) => setForm((current) => ({ ...current, districtName: event.target.value }))}
+              value={form.districtName}
+            />
           </div>
           <div className="field">
             <label htmlFor="default">默认地址</label>
@@ -103,15 +167,20 @@ function AddressFormModal({
           </div>
           <div className="field full">
             <label htmlFor="detail">详细地址</label>
-            <textarea id="detail" onChange={(event) => setForm((current) => ({ ...current, detail: event.target.value }))} value={form.detail} />
+            <textarea
+              autoComplete="street-address"
+              id="detail"
+              onChange={(event) => setForm((current) => ({ ...current, detail: event.target.value }))}
+              value={form.detail}
+            />
           </div>
         </div>
 
         <div className="button-row" style={{ marginTop: 18 }}>
-          <button className="button primary" onClick={() => onSubmit(form)} type="button">
-            保存地址
+          <button className="button primary" disabled={pending} onClick={() => onSubmit(form)} type="button">
+            {pending ? '保存中…' : '保存地址'}
           </button>
-          <button className="button secondary" onClick={onClose} type="button">
+          <button className="button secondary" disabled={pending} onClick={onClose} type="button">
             取消
           </button>
         </div>
@@ -122,8 +191,12 @@ function AddressFormModal({
 
 export function CustomerAddressBookPage() {
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [editingAddress, setEditingAddress] = useState<AddressBook | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const fromCheckout = Boolean((location.state as { fromCheckout?: boolean } | null)?.fromCheckout);
+
   const addressListQuery = useQuery({
     queryKey: ['customer', 'address', 'list'],
     queryFn: () => userApi.addressList(),
@@ -151,35 +224,101 @@ export function CustomerAddressBookPage() {
         const targetId = form.id ?? (result as AddressBook).id;
         await userApi.setDefaultAddress(targetId);
       }
+
+      return form;
     },
-    onSuccess: async () => {
+    onError: (error) => {
+      setFeedback({
+        title: '地址保存失败',
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
+    onSuccess: async (form) => {
       setEditingAddress(null);
       setIsCreating(false);
       await queryClient.invalidateQueries({ queryKey: ['customer', 'address'] });
+      setFeedback({
+        title: form.isDefault
+          ? appCopy.customerAddresses.saveDefaultSuccessTitle
+          : appCopy.customerAddresses.saveSuccessTitle,
+        body: form.isDefault
+          ? appCopy.customerAddresses.saveDefaultSuccessBody
+          : appCopy.customerAddresses.saveSuccessBody,
+        tone: 'live',
+        action: fromCheckout && form.isDefault
+          ? { label: appCopy.customerAddresses.checkoutHintAction, to: '/customer' }
+          : undefined,
+      });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => userApi.deleteAddress(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', 'address'] }),
+    onError: (error) => {
+      setFeedback({
+        title: '删除失败',
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customer', 'address'] });
+      setFeedback({
+        title: appCopy.customerAddresses.deleteSuccessTitle,
+        body: appCopy.customerAddresses.deleteSuccessBody,
+        tone: 'live',
+      });
+    },
   });
+
   const defaultMutation = useMutation({
     mutationFn: (id: number) => userApi.setDefaultAddress(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', 'address'] }),
+    onError: (error) => {
+      setFeedback({
+        title: '默认地址切换失败',
+        body: getErrorMessage(error),
+        tone: 'fallback',
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customer', 'address'] });
+      setFeedback({
+        title: appCopy.customerAddresses.defaultSuccessTitle,
+        body: appCopy.customerAddresses.defaultSuccessBody,
+        tone: 'live',
+        action: fromCheckout ? { label: appCopy.customerAddresses.checkoutHintAction, to: '/customer' } : undefined,
+      });
+    },
   });
 
   return (
     <div className="page-grid">
       <PageHero
         eyebrow="Customer / Address Book"
-        title="地址簿要尽量轻，动作却要完整"
-        description="地址簿页把新增、修改、删除、设默认这几条接口合到一页，顾客可以直接把默认地址准备好再去下单。"
+        title={appCopy.customerAddresses.heroTitle}
+        description={appCopy.customerAddresses.heroDescription}
         actions={
           <button className="button primary" onClick={() => setIsCreating(true)} type="button">
-            新增地址
+            {appCopy.customerAddresses.createAction}
           </button>
         }
       />
+
+      {fromCheckout ? (
+        <InlineNotice
+          actions={
+            <Link className="button secondary small" to="/customer">
+              {appCopy.customerAddresses.checkoutHintAction}
+            </Link>
+          }
+          body={appCopy.customerAddresses.checkoutHintBody}
+          title={appCopy.customerAddresses.checkoutHintTitle}
+          tone="warning"
+        />
+      ) : null}
+
+      <FeedbackNotice feedback={feedback} />
 
       {addressListQuery.isLoading ? (
         <LoadingState body="正在读取当前用户的地址列表。" />
@@ -207,11 +346,11 @@ export function CustomerAddressBookPage() {
                   编辑
                 </button>
                 {address.isDefault !== 1 ? (
-                  <button className="button ghost small" onClick={() => defaultMutation.mutate(address.id)} type="button">
+                  <button className="button ghost small" disabled={defaultMutation.isPending} onClick={() => defaultMutation.mutate(address.id)} type="button">
                     设为默认
                   </button>
                 ) : null}
-                <button className="button danger small" onClick={() => deleteMutation.mutate(address.id)} type="button">
+                <button className="button danger small" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(address.id)} type="button">
                   删除
                 </button>
               </div>
@@ -219,7 +358,15 @@ export function CustomerAddressBookPage() {
           ))}
         </div>
       ) : (
-        <EmptyState body="目前还没有地址，先新增一个默认地址，点餐和下单就会顺很多。" title="地址簿还没有内容" />
+        <EmptyState
+          action={
+            <button className="button secondary" onClick={() => setIsCreating(true)} type="button">
+              {appCopy.customerAddresses.createAction}
+            </button>
+          }
+          body={appCopy.customerAddresses.emptyBody}
+          title={appCopy.customerAddresses.emptyTitle}
+        />
       )}
 
       {(isCreating || editingAddress) ? (
@@ -230,6 +377,7 @@ export function CustomerAddressBookPage() {
             setIsCreating(false);
           }}
           onSubmit={(value) => saveMutation.mutate(value)}
+          pending={saveMutation.isPending}
         />
       ) : null}
     </div>

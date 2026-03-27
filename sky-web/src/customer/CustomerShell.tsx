@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode }
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet } from 'react-router-dom';
 import { userApi, type User } from '../shared/api';
-import { InlineNotice, LoadingState, StatusPill } from '../shared/components';
+import { ErrorState, InlineNotice, LoadingState, StatusPill } from '../shared/components';
 import { appCopy } from '../shared/copy';
 import { clearUserToken, getUserToken, setUserToken } from '../shared/storage';
 import { createMockCode, getShopStatusLabel } from '../shared/utils';
@@ -40,6 +40,12 @@ export function CustomerShell() {
       clearUserToken();
     },
   });
+  const retryBootstrap = () => {
+    clearUserToken();
+    bootstrapMutation.reset();
+    bootstrapRef.current = true;
+    bootstrapMutation.mutate();
+  };
 
   const currentUserQuery = useQuery({
     queryKey: ['customer', 'current', getUserToken()],
@@ -62,6 +68,7 @@ export function CustomerShell() {
   }, [bootstrapMutation]);
 
   const sessionReady = Boolean(getUserToken()) && !currentUserQuery.isLoading;
+  const hasSessionError = bootstrapMutation.isError || currentUserQuery.isError;
   const contextValue = useMemo<CustomerShellContextValue>(
     () => ({
       currentUser: currentUserQuery.data ?? null,
@@ -115,9 +122,22 @@ export function CustomerShell() {
             {bootstrapMutation.isError ? (
               <InlineNotice body={appCopy.customerShell.errorBody} title={appCopy.customerShell.errorTitle} tone="fallback" />
             ) : null}
+            {shopStatusQuery.isError ? (
+              <InlineNotice body={appCopy.runbook.serviceErrorBody} title={appCopy.runbook.serviceErrorTitle} tone="warning" />
+            ) : null}
           </header>
 
-          {!sessionReady && !bootstrapMutation.isError ? (
+          {hasSessionError ? (
+            <ErrorState
+              action={
+                <button className="button secondary" onClick={retryBootstrap} type="button">
+                  重新建立会话
+                </button>
+              }
+              body={appCopy.customerShell.errorBody}
+              title={appCopy.customerShell.errorTitle}
+            />
+          ) : !sessionReady ? (
             <LoadingState body={appCopy.customerShell.loadingBody} title={appCopy.customerShell.loadingTitle} />
           ) : (
             <Outlet />

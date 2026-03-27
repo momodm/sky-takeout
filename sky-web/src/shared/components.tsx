@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import type { EChartsOption } from 'echarts';
 
+export type NoticeTone = 'default' | 'live' | 'fallback' | 'warning';
+
 interface PageHeroProps {
   eyebrow: string;
   eyebrowTone?: 'accent' | 'support' | 'warning';
@@ -28,7 +30,8 @@ interface MetricCardProps {
 interface NoticeProps {
   title: string;
   body: string;
-  tone?: 'default' | 'live' | 'fallback' | 'warning';
+  tone?: NoticeTone;
+  actions?: ReactNode;
 }
 
 interface StatusPillProps {
@@ -102,11 +105,18 @@ export function MetricCard({ label, value, hint, tone = 'default' }: MetricCardP
   );
 }
 
-export function InlineNotice({ title, body, tone = 'default' }: NoticeProps) {
+export function InlineNotice({ title, body, tone = 'default', actions }: NoticeProps) {
   return (
-    <div className={`notice${tone === 'default' ? '' : ` ${tone}`}`}>
-      <strong>{title}</strong>
-      <span>{body}</span>
+    <div
+      aria-live="polite"
+      className={`notice${tone === 'default' ? '' : ` ${tone}`}`}
+      role="status"
+    >
+      <div className="notice-body">
+        <strong>{title}</strong>
+        <span>{body}</span>
+      </div>
+      {actions ? <div className="notice-actions">{actions}</div> : null}
     </div>
   );
 }
@@ -127,7 +137,7 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
 
 export function ErrorState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
-    <div className="empty-state error-state">
+    <div className="empty-state error-state" role="alert">
       <strong>{title}</strong>
       <span className="soft-copy">{body}</span>
       {action}
@@ -137,7 +147,7 @@ export function ErrorState({ title, body, action }: { title: string; body: strin
 
 export function LoadingState({ title = '正在加载数据', body = '稍等一下，前端正在和后端同步。' }) {
   return (
-    <div className="loading-state">
+    <div aria-live="polite" className="loading-state" role="status">
       <strong>{title}</strong>
       <span className="soft-copy">{body}</span>
       <div className="loading-bar" />
