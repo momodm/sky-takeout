@@ -41,6 +41,66 @@ interface FeedbackState {
   };
 }
 
+function CustomerJourney({
+  hasCart,
+  hasDefaultAddress,
+  shopStatus,
+}: {
+  hasCart: boolean;
+  hasDefaultAddress: boolean;
+  shopStatus: number | null;
+}) {
+  const steps = [
+    {
+      title: appCopy.customerHome.journeyBrowseTitle,
+      body: appCopy.customerHome.journeyBrowseBody,
+      state: hasCart ? 'done' : 'active',
+    },
+    {
+      title: appCopy.customerHome.journeyAddressTitle,
+      body: appCopy.customerHome.journeyAddressBody,
+      state: hasDefaultAddress ? 'done' : hasCart ? 'active' : 'locked',
+    },
+    {
+      title: appCopy.customerHome.journeySubmitTitle,
+      body: appCopy.customerHome.journeySubmitBody,
+      state: hasCart && hasDefaultAddress && shopStatus === 1 ? 'active' : 'locked',
+    },
+    {
+      title: appCopy.customerHome.journeyPayTitle,
+      body: appCopy.customerHome.journeyPayBody,
+      state: 'locked',
+    },
+  ] as const;
+
+  return (
+    <section className="panel section-card">
+      <SectionTitle
+        eyebrow="Checkout Map"
+        eyebrowTone="support"
+        title={appCopy.customerHome.journeyTitle}
+        description={appCopy.customerHome.journeyDescription}
+      />
+      <div className="journey-grid">
+        {steps.map((step, index) => (
+          <article className={`journey-card journey-${step.state}`} key={step.title}>
+            <span className="journey-index">0{index + 1}</span>
+            <div className="stack" style={{ gap: 8 }}>
+              <strong>{step.title}</strong>
+              <span className="soft-copy">{step.body}</span>
+            </div>
+            <StatusPill
+              tone={step.state === 'done' ? 'live' : step.state === 'active' ? 'demo' : 'warning'}
+            >
+              {step.state === 'done' ? '已准备' : step.state === 'active' ? '下一步' : '待完成'}
+            </StatusPill>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function FeedbackNotice({ feedback }: { feedback: FeedbackState | null }) {
   if (!feedback) {
     return null;
@@ -509,6 +569,12 @@ export function CustomerHomePage() {
           tone="warning"
         />
       ) : null}
+
+      <CustomerJourney
+        hasCart={cartSummary.count > 0}
+        hasDefaultAddress={hasDefaultAddress}
+        shopStatus={shopStatus}
+      />
 
       {hasCatalogError ? (
         <ErrorState body={appCopy.customerHome.serviceErrorBody} title={appCopy.customerHome.serviceErrorTitle} />

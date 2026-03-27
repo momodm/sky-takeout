@@ -1,4 +1,4 @@
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { userApi, type OrderVO } from '../../shared/api';
@@ -7,6 +7,7 @@ import {
   ErrorState,
   InlineNotice,
   LoadingState,
+  MetricCard,
   type NoticeTone,
   PageHero,
   StatusPill,
@@ -129,6 +130,27 @@ export function CustomerOrdersPage() {
     mutationFn: (orderId: number) => userApi.repetitionOrder(orderId),
   });
 
+  const orderSummary = useMemo(() => {
+    const records = ordersQuery.data?.records ?? [];
+
+    return records.reduce(
+      (summary, record) => {
+        if (record.orders.status === 1) {
+          summary.pending += 1;
+        } else if ([2, 3, 4].includes(record.orders.status)) {
+          summary.active += 1;
+        } else if (record.orders.status === 5) {
+          summary.finished += 1;
+        } else if (record.orders.status === 6) {
+          summary.canceled += 1;
+        }
+
+        return summary;
+      },
+      { pending: 0, active: 0, finished: 0, canceled: 0 },
+    );
+  }, [ordersQuery.data?.records]);
+
   const runOrderAction = (
     record: OrderVO,
     mutation: typeof paymentMutation,
@@ -183,6 +205,31 @@ export function CustomerOrdersPage() {
                 {filter.label}
               </button>
             ))}
+          </div>
+        }
+        aside={
+          <div className="metrics-grid">
+            <MetricCard
+              hint={appCopy.customerOrders.summaryDescription}
+              label={appCopy.customerOrders.pendingCountLabel}
+              value={orderSummary.pending}
+            />
+            <MetricCard
+              hint={orderSummary.active ? appCopy.customerOrders.liveHintBusy : appCopy.customerOrders.liveHintIdle}
+              label={appCopy.customerOrders.activeCountLabel}
+              tone="support"
+              value={orderSummary.active}
+            />
+            <MetricCard
+              hint={appCopy.customerOrders.summaryDescription}
+              label={appCopy.customerOrders.finishedCountLabel}
+              value={orderSummary.finished}
+            />
+            <MetricCard
+              hint={appCopy.customerOrders.summaryDescription}
+              label={appCopy.customerOrders.canceledCountLabel}
+              value={orderSummary.canceled}
+            />
           </div>
         }
       />

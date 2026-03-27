@@ -577,6 +577,58 @@ img {
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
 }
 
+.journey-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.journey-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(23, 36, 48, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-soft);
+}
+
+.journey-card strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.journey-card.journey-done {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(30, 111, 99, 0.14), transparent 28%),
+    rgba(255, 255, 255, 0.92);
+}
+
+.journey-card.journey-active {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(202, 95, 45, 0.18), transparent 30%),
+    rgba(255, 255, 255, 0.94);
+  transform: translateY(-2px);
+}
+
+.journey-card.journey-locked {
+  opacity: 0.84;
+}
+
+.journey-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(23, 36, 48, 0.06);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .sticky-cart-bar {
   position: sticky;
   bottom: 18px;
@@ -1085,7 +1137,8 @@ tbody tr:hover {
   .grid-4,
   .metrics-grid,
   .order-state-lanes,
-  .cards-grid {
+  .cards-grid,
+  .journey-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1131,6 +1184,7 @@ tbody tr:hover {
   .grid-4,
   .metrics-grid,
   .cards-grid,
+  .journey-grid,
   .profile-grid,
   .report-grid,
   .order-state-lanes,
