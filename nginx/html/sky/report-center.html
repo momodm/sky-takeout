@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>苍穹外卖报表中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5efe3;
+      --panel: rgba(255, 252, 247, 0.88);
+      --panel-strong: rgba(255, 255, 255, 0.95);
+      --ink: #172430;
+      --muted: #66727d;
+      --line: rgba(23, 36, 48, 0.1);
+      --accent: #b85b32;
+      --accent-soft: rgba(184, 91, 50, 0.12);
+      --support: #1c7061;
+      --support-soft: rgba(28, 112, 97, 0.12);
+      --warning: #c58d22;
+      --warning-soft: rgba(197, 141, 34, 0.13);
+      --radius-xl: 32px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow: 0 28px 80px rgba(72, 56, 41, 0.12);
+      --focus: 0 0 0 3px rgba(184, 91, 50, 0.26);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      color-scheme: light;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(184, 91, 50, 0.14), transparent 22%),
+        radial-gradient(circle at 84% 12%, rgba(28, 112, 97, 0.14), transparent 20%),
+        linear-gradient(180deg, #fbf6ef 0%, var(--bg) 42%, #ece0ce 100%);
+      color: var(--ink);
+      font-family: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+      touch-action: manipulation;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -48px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      z-index: 10;
+      transition: top 0.18s ease;
+    }
+
+    .skip-link:focus-visible {
+      top: 16px;
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .shell {
+      width: min(1380px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.14fr) minmax(360px, 0.86fr);
+      gap: 18px;
+      padding: 24px;
+      align-items: start;
+    }
+
+    .hero-copy,
+    .hero-side,
+    .stack,
+    .control-grid,
+    .chart-grid,
+    .summary-grid,
+    .detail-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-self: start;
+      width: fit-content;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge.accent { color: var(--accent); background: var(--accent-soft); }
+    .badge.support { color: var(--support); background: var(--support-soft); }
+    .badge.warning { color: var(--warning); background: var(--warning-soft); }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      text-wrap: balance;
+    }
+
+    h1 { font-size: clamp(32px, 4vw, 58px); max-width: 10ch; }
+    h2 { font-size: clamp(28px, 2.4vw, 38px); }
+    h3 { font-size: 24px; }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.78;
+    }
+
+    .hero-copy p {
+      max-width: 58ch;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn:focus-visible,
+    input:focus-visible,
+    button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .btn.primary {
+      color: #fff8f3;
+      background: linear-gradient(135deg, var(--accent), #9b4421);
+      box-shadow: 0 16px 28px rgba(155, 68, 33, 0.22);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.84);
+      border-color: var(--line);
+    }
+
+    .notice {
+      display: grid;
+      gap: 6px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: rgba(102, 114, 125, 0.08);
+      color: #54616c;
+    }
+
+    .notice strong {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .notice.live {
+      background: rgba(28, 112, 97, 0.1);
+      border-color: rgba(28, 112, 97, 0.18);
+      color: #1f6056;
+    }
+
+    .notice.fallback {
+      background: rgba(184, 91, 50, 0.12);
+      border-color: rgba(184, 91, 50, 0.18);
+      color: #8c4626;
+    }
+
+    .hero-side {
+      min-width: 0;
+    }
+
+    .control-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .input-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(23, 36, 48, 0.12);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      min-height: 150px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: clamp(30px, 3vw, 44px);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .metric.muted {
+      background: linear-gradient(160deg, rgba(28, 112, 97, 0.08), var(--panel-strong));
+    }
+
+    .metric.warning {
+      background: linear-gradient(160deg, rgba(184, 91, 50, 0.08), var(--panel-strong));
+    }
+
+    .section {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .chart-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .chart-card,
+    .table-card {
+      min-width: 0;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      display: grid;
+      gap: 16px;
+    }
+
+    .chart-card header,
+    .table-card header {
+      display: grid;
+      gap: 6px;
+    }
+
+    .chart-card header p,
+    .table-card header p {
+      font-size: 13px;
+    }
+
+    .chart {
+      display: grid;
+      gap: 10px;
+      align-content: end;
+      min-height: 220px;
+    }
+
+    .bars {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(22px, 1fr));
+      gap: 10px;
+      align-items: end;
+      min-height: 160px;
+    }
+
+    .bar-item {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+    }
+
+    .bar-track {
+      position: relative;
+      width: 100%;
+      min-height: 160px;
+      display: flex;
+      align-items: end;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(23, 36, 48, 0.02), rgba(23, 36, 48, 0.08));
+      overflow: hidden;
+    }
+
+    .bar {
+      width: 100%;
+      border-radius: 18px 18px 8px 8px;
+      background: linear-gradient(180deg, rgba(28, 112, 97, 0.88), rgba(28, 112, 97, 0.52));
+      transition: height 0.35s ease, opacity 0.2s ease;
+    }
+
+    .bar.warning {
+      background: linear-gradient(180deg, rgba(184, 91, 50, 0.9), rgba(184, 91, 50, 0.5));
+    }
+
+    .bar.soft {
+      background: linear-gradient(180deg, rgba(197, 141, 34, 0.86), rgba(197, 141, 34, 0.48));
+    }
+
+    .bar-label,
+    .bar-value {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(23, 36, 48, 0.08);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    td strong {
+      display: block;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      padding: 18px;
+      border: 1px dashed rgba(23, 36, 48, 0.14);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .kpi-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .kpi {
+      display: grid;
+      gap: 6px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .kpi strong {
+      font-size: 28px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .btn,
+      .bar {
+        transition: none;
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .detail-grid,
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 1380px);
+      }
+
+      .hero,
+      .section {
+        padding: 18px;
+      }
+
+      .control-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+  <main class="shell" id="main-content">
+    <section class="card hero">
+      <div class="hero-copy">
+        <div class="badge accent">Day 10 / Report Center</div>
+        <h1>把统计接口变成真正可读、可导出、可演示的报表中心</h1>
+        <p>这页把 Day 10 的营业额趋势、用户增长、订单完成率、销量前十和 Excel 导出都收在一起。默认优先走真实数据，没有管理员 token 时会回退到演示数据，保证展示不断档。</p>
+        <div class="btn-row">
+          <button class="btn primary" id="refreshBtn" type="button">刷新报表</button>
+          <button class="btn secondary" id="exportBtn" type="button">导出今日报表</button>
+          <a class="btn secondary" href="http://127.0.0.1/index.html">返回工作台首页</a>
+        </div>
+        <div class="notice" id="originNotice" aria-live="polite">
+          <strong id="originLabel">准备中</strong>
+          <span id="originText">正在判断报表数据来源。</span>
+        </div>
+      </div>
+
+      <aside class="hero-side">
+        <div class="badge support">筛选与权限</div>
+        <h2>统计窗口</h2>
+        <div class="control-grid">
+          <div class="input-group">
+            <label for="beginDate">开始日期</label>
+            <input id="beginDate" name="beginDate" type="date" autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label for="endDate">结束日期</label>
+            <input id="endDate" name="endDate" type="date" autocomplete="off">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="tokenInput">管理员 Token</label>
+          <input id="tokenInput" name="token" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴登录后的 token…">
+        </div>
+        <div class="btn-row">
+          <button class="btn secondary" id="saveTokenBtn" type="button">保存 Token</button>
+          <button class="btn secondary" id="clearTokenBtn" type="button">清空 Token</button>
+          <button class="btn secondary" id="demoBtn" type="button">锁定演示</button>
+        </div>
+        <div class="stack">
+          <p id="tokenStatus">Token：未保存</p>
+          <p id="modeStatus">模式：真实优先</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card section">
+      <div class="badge support">经营快照</div>
+      <h2>当前窗口摘要</h2>
+      <div class="summary-grid">
+        <article class="metric muted">
+          <strong id="totalOrders">0</strong>
+          <span>订单总数</span>
+        </article>
+        <article class="metric">
+          <strong id="validOrders">0</strong>
+          <span>有效订单</span>
+        </article>
+        <article class="metric warning">
+          <strong id="completionRate">0.00%</strong>
+          <span>订单完成率</span>
+        </article>
+        <article class="metric muted">
+          <strong id="topProduct">暂无</strong>
+          <span>窗口内销量最高商品</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="chart-grid">
+      <section class="card section chart-card">
+        <header>
+          <div class="badge accent">营业额趋势</div>
+          <h3>每天卖了多少钱</h3>
+          <p>横向看波峰，最适合判断哪一天真正有营业额。</p>
+        </header>
+        <div class="chart">
+          <div class="bars" id="turnoverBars"></div>
+        </div>
+      </section>
+
+      <section class="card section chart-card">
+        <header>
+          <div class="badge support">用户增长</div>
+          <h3>新增与累计用户</h3>
+          <p>一眼看出最近有没有新增流量，以及存量盘子有多大。</p>
+        </header>
+        <div class="chart">
+          <div class="bars" id="userBars"></div>
+        </div>
+      </section>
+
+      <section class="card section chart-card">
+        <header>
+          <div class="badge warning">订单完成</div>
+          <h3>订单量与完成量</h3>
+          <p>不是只看有多少单，而是看有多少单真的完成了履约。</p>
+        </header>
+        <div class="chart">
+          <div class="bars" id="orderBars"></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="detail-grid">
+      <section class="card section table-card">
+        <header>
+          <div class="badge accent">销量前十</div>
+          <h3>最近窗口里的热销商品</h3>
+          <p>如果当前区间没有已完成且已支付的订单，这里会明确展示空状态。</p>
+        </header>
+        <div id="salesTableWrap"></div>
+      </section>
+
+      <aside class="card section">
+        <div class="badge support">导出说明</div>
+        <h3>导出会带什么</h3>
+        <div class="kpi-list">
+          <article class="kpi">
+            <strong>今日营业总览</strong>
+            <span>订单总数、有效订单数、营业额、完成率、新增用户、平均客单价。</span>
+          </article>
+          <article class="kpi">
+            <strong>今日销量 Top10</strong>
+            <span>导出的 xlsx 会附带商品名称和销量，方便留档和汇报。</span>
+          </article>
+          <article class="kpi">
+            <strong>共享管理员 Token</strong>
+            <span>这里沿用工作台首页与提醒监控台的管理员 token，不用重复登录。</span>
+          </article>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const KEY = {
+      token: "sky_admin_token",
+      demo: "sky_demo_mode"
+    };
+
+    const API = {
+      turnover: "/api/report/turnoverStatistics",
+      user: "/api/report/userStatistics",
+      order: "/api/report/ordersStatistics",
+      top10: "/api/report/top10",
+      export: "/api/report/export"
+    };
+
+    const el = {
+      beginDate: document.getElementById("beginDate"),
+      endDate: document.getElementById("endDate"),
+      tokenInput: document.getElementById("tokenInput"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      exportBtn: document.getElementById("exportBtn"),
+      saveTokenBtn: document.getElementById("saveTokenBtn"),
+      clearTokenBtn: document.getElementById("clearTokenBtn"),
+      demoBtn: document.getElementById("demoBtn"),
+      tokenStatus: document.getElementById("tokenStatus"),
+      modeStatus: document.getElementById("modeStatus"),
+      originNotice: document.getElementById("originNotice"),
+      originLabel: document.getElementById("originLabel"),
+      originText: document.getElementById("originText"),
+      totalOrders: document.getElementById("totalOrders"),
+      validOrders: document.getElementById("validOrders"),
+      completionRate: document.getElementById("completionRate"),
+      topProduct: document.getElementById("topProduct"),
+      turnoverBars: document.getElementById("turnoverBars"),
+      userBars: document.getElementById("userBars"),
+      orderBars: document.getElementById("orderBars"),
+      salesTableWrap: document.getElementById("salesTableWrap")
+    };
+
+    function getToday() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getDefaultBegin() {
+      const date = new Date();
+      date.setDate(date.getDate() - 6);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function normalizeToken(value = "") {
+      return value.trim().replace(/^"+|"+$/g, "");
+    }
+
+    function getToken() {
+      return normalizeToken(localStorage.getItem(KEY.token) || "");
+    }
+
+    function isDemoLocked() {
+      return localStorage.getItem(KEY.demo) === "1";
+    }
+
+    function updateTokenUI() {
+      const token = getToken();
+      el.tokenInput.value = token;
+      el.tokenStatus.textContent = token ? "Token：已保存" : "Token：未保存";
+      el.modeStatus.textContent = isDemoLocked() ? "模式：演示锁定" : "模式：真实优先";
+      el.demoBtn.textContent = isDemoLocked() ? "恢复真实优先" : "锁定演示";
+    }
+
+    function setNotice(type, label, text) {
+      el.originNotice.className = `notice ${type}`;
+      el.originLabel.textContent = label;
+      el.originText.textContent = text;
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("zh-CN").format(Number(value || 0));
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("zh-CN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Number(value || 0));
+    }
+
+    function formatPercent(value) {
+      return `${formatMoney(value)}%`;
+    }
+
+    function toArray(csv) {
+      return csv ? csv.split(",") : [];
+    }
+
+    function buildRange(begin, end) {
+      const dates = [];
+      const current = new Date(begin);
+      const last = new Date(end);
+      while (current <= last) {
+        dates.push(current.toISOString().slice(0, 10));
+        current.setDate(current.getDate() + 1);
+      }
+      return dates;
+    }
+
+    function createBarMarkup(labels, values, tone = "") {
+      const numeric = values.map((value) => Number(value || 0));
+      const max = Math.max(...numeric, 1);
+      return labels.map((label, index) => {
+        const value = numeric[index] || 0;
+        const height = Math.max((value / max) * 100, value > 0 ? 18 : 4);
+        return `
+          <article class="bar-item">
+            <div class="bar-value">${formatMoney(value)}</div>
+            <div class="bar-track">
+              <div class="bar ${tone}" style="height:${height}%"></div>
+            </div>
+            <div class="bar-label">${label.slice(5)}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function createOrderBarMarkup(labels, totalValues, validValues) {
+      const totals = totalValues.map((value) => Number(value || 0));
+      const valids = validValues.map((value) => Number(value || 0));
+      const max = Math.max(...totals, ...valids, 1);
+      return labels.map((label, index) => {
+        const total = totals[index] || 0;
+        const valid = valids[index] || 0;
+        const totalHeight = Math.max((total / max) * 100, total > 0 ? 18 : 4);
+        const validHeight = Math.max((valid / max) * 100, valid > 0 ? 18 : 4);
+        return `
+          <article class="bar-item">
+            <div class="bar-value">${formatNumber(valid)} / ${formatNumber(total)}</div>
+            <div class="bar-track">
+              <div class="bar warning" style="height:${totalHeight}%"></div>
+              <div class="bar soft" style="height:${Math.min(validHeight, totalHeight)}%; position:absolute; inset:auto 4px 0 4px;"></div>
+            </div>
+            <div class="bar-label">${label.slice(5)}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderTop10(nameList, numberList) {
+      const names = toArray(nameList);
+      const numbers = toArray(numberList);
+      if (!names.length) {
+        el.salesTableWrap.innerHTML = `
+          <div class="empty">
+            <div>
+              <strong>当前区间没有可统计销量的已完成订单</strong>
+              <p>如果你想看这里的数据，可以把日期切到有已完成且已支付订单的窗口。</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const rows = names.map((name, index) => `
+        <tr>
+          <td><strong>#${index + 1}</strong>${name}</td>
+          <td>${formatNumber(numbers[index] || 0)}</td>
+        </tr>
+      `).join("");
+
+      el.salesTableWrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">商品</th>
+              <th scope="col">销量</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function applyReport(data) {
+      const topNames = toArray(data.top10.nameList);
+      el.totalOrders.textContent = formatNumber(data.order.totalOrderCount);
+      el.validOrders.textContent = formatNumber(data.order.validOrderCount);
+      el.completionRate.textContent = formatPercent(data.order.orderCompletionRate);
+      el.topProduct.textContent = topNames[0] || "暂无";
+
+      const dates = toArray(data.turnover.dateList);
+      el.turnoverBars.innerHTML = createBarMarkup(dates, toArray(data.turnover.turnoverList), "");
+      el.userBars.innerHTML = createBarMarkup(dates, toArray(data.user.newUserList), "soft");
+      el.orderBars.innerHTML = createOrderBarMarkup(dates, toArray(data.order.orderCountList), toArray(data.order.validOrderCountList));
+      renderTop10(data.top10.nameList, data.top10.numberList);
+    }
+
+    function getDemoData(begin, end) {
+      const dates = buildRange(begin, end);
+      const turnover = [];
+      const newUsers = [];
+      const totalUsers = [];
+      const orderCounts = [];
+      const validOrders = [];
+      let totalUserBase = 36;
+
+      dates.forEach((date, index) => {
+        const turnoverValue = [0, 368.5, 612.4, 458.8, 920.6, 1180.3, 736.9][index % 7];
+        const newUserValue = [0, 2, 4, 3, 5, 6, 2][index % 7];
+        const orderValue = [0, 8, 12, 10, 15, 18, 11][index % 7];
+        const validOrderValue = [0, 6, 10, 8, 13, 15, 9][index % 7];
+
+        turnover.push(String(turnoverValue.toFixed(2)));
+        newUsers.push(String(newUserValue));
+        totalUserBase += newUserValue;
+        totalUsers.push(String(totalUserBase));
+        orderCounts.push(String(orderValue));
+        validOrders.push(String(validOrderValue));
+      });
+
+      const totalOrderCount = orderCounts.reduce((sum, item) => sum + Number(item), 0);
+      const validOrderCount = validOrders.reduce((sum, item) => sum + Number(item), 0);
+
+      return {
+        turnover: {
+          dateList: dates.join(","),
+          turnoverList: turnover.join(",")
+        },
+        user: {
+          dateList: dates.join(","),
+          newUserList: newUsers.join(","),
+          totalUserList: totalUsers.join(",")
+        },
+        order: {
+          dateList: dates.join(","),
+          orderCountList: orderCounts.join(","),
+          validOrderCountList: validOrders.join(","),
+          totalOrderCount,
+          validOrderCount,
+          orderCompletionRate: totalOrderCount ? ((validOrderCount / totalOrderCount) * 100).toFixed(2) : "0.00"
+        },
+        top10: {
+          nameList: "招牌炒饭,黑椒鸡排饭,可乐套餐,香辣鸡腿堡,青柠双拼",
+          numberList: "23,18,16,12,9"
+        }
+      };
+    }
+
+    async function requestJson(url, token) {
+      const response = await fetch(url, {
+        headers: { token }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      if (payload.code !== 1) {
+        throw new Error(payload.msg || "业务返回失败");
+      }
+      return payload.data;
+    }
+
+    async function refreshReport() {
+      const begin = el.beginDate.value;
+      const end = el.endDate.value;
+      if (!begin || !end) {
+        setNotice("fallback", "缺少日期", "请先选择完整的统计窗口。");
+        return;
+      }
+
+      if (begin > end) {
+        setNotice("fallback", "日期错误", "开始日期不能晚于结束日期。");
+        return;
+      }
+
+      if (isDemoLocked()) {
+        applyReport(getDemoData(begin, end));
+        setNotice("fallback", "演示模式", "当前展示的是模拟报表数据。");
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        applyReport(getDemoData(begin, end));
+        setNotice("fallback", "缺少 Token", "还没有保存管理员 token，当前已回退到演示报表。");
+        return;
+      }
+
+      try {
+        const query = `begin=${encodeURIComponent(begin)}&end=${encodeURIComponent(end)}`;
+        const [turnover, user, order, top10] = await Promise.all([
+          requestJson(`${API.turnover}?${query}`, token),
+          requestJson(`${API.user}?${query}`, token),
+          requestJson(`${API.order}?${query}`, token),
+          requestJson(`${API.top10}?${query}`, token)
+        ]);
+        applyReport({ turnover, user, order, top10 });
+        setNotice("live", "真实数据", "报表中心已从 Day 10 统计接口刷新。");
+      } catch (error) {
+        applyReport(getDemoData(begin, end));
+        setNotice("fallback", "回退演示", `真实报表暂不可用，原因：${error.message}`);
+      }
+    }
+
+    async function exportReport() {
+      const token = getToken();
+      if (!token || isDemoLocked()) {
+        setNotice("fallback", "无法导出", "导出需要真实管理员 token，演示模式下不会生成真实文件。");
+        return;
+      }
+
+      try {
+        const response = await fetch(API.export, {
+          headers: { token }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `day10-report-${getToday()}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setNotice("live", "导出完成", "今日营业数据报表已开始下载。");
+      } catch (error) {
+        setNotice("fallback", "导出失败", `导出营业数据时失败，原因：${error.message}`);
+      }
+    }
+
+    el.beginDate.value = getDefaultBegin();
+    el.endDate.value = getToday();
+
+    el.refreshBtn.addEventListener("click", refreshReport);
+    el.exportBtn.addEventListener("click", exportReport);
+    el.saveTokenBtn.addEventListener("click", () => {
+      localStorage.setItem(KEY.token, normalizeToken(el.tokenInput.value));
+      updateTokenUI();
+      refreshReport();
+    });
+    el.clearTokenBtn.addEventListener("click", () => {
+      localStorage.removeItem(KEY.token);
+      updateTokenUI();
+      refreshReport();
+    });
+    el.demoBtn.addEventListener("click", () => {
+      if (isDemoLocked()) {
+        localStorage.removeItem(KEY.demo);
+      } else {
+        localStorage.setItem(KEY.demo, "1");
+      }
+      updateTokenUI();
+      refreshReport();
+    });
+
+    updateTokenUI();
+    refreshReport();
+  </script>
+</body>
+</html>

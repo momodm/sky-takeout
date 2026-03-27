@@ -145,7 +145,13 @@ export function ErrorState({ title, body, action }: { title: string; body: strin
   );
 }
 
-export function LoadingState({ title = '正在加载数据', body = '稍等一下，前端正在和后端同步。' }) {
+export function LoadingState({
+  title = '正在加载数据',
+  body = '稍等一下，前端正在和后端同步。',
+}: {
+  title?: string;
+  body?: string;
+}) {
   return (
     <div aria-live="polite" className="loading-state" role="status">
       <strong>{title}</strong>
@@ -241,7 +247,7 @@ export function EChart({ option, height = 300 }: { option: AppChartOption; heigh
       {chartState === 'error' ? (
         <div className="chart-shell-placeholder chart-shell-error" role="alert">
           <strong>图表加载失败</strong>
-          <span className="soft-copy">可以先查看右侧指标卡，稍后再刷新当前页面。</span>
+          <span className="soft-copy">可以先查看旁边的指标卡，稍后再刷新当前页面。</span>
         </div>
       ) : null}
       <div

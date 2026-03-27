@@ -1,0 +1,648 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>苍穹外卖工作台首页</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3ecdf;
+      --paper: rgba(255, 251, 245, 0.88);
+      --paper-strong: rgba(255, 255, 255, 0.95);
+      --ink: #18242d;
+      --muted: #66737e;
+      --accent: #d26a3d;
+      --accent-soft: rgba(210, 106, 61, 0.12);
+      --support: #1d7064;
+      --support-soft: rgba(29, 112, 100, 0.12);
+      --line: rgba(24, 36, 45, 0.1);
+      --shadow: 0 28px 80px rgba(70, 54, 38, 0.14);
+      --radius-xl: 30px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --focus: 0 0 0 3px rgba(210, 106, 61, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(210, 106, 61, 0.14), transparent 25%),
+        radial-gradient(circle at 88% 10%, rgba(29, 112, 100, 0.12), transparent 22%),
+        linear-gradient(180deg, #f8f3eb 0%, var(--bg) 45%, #eadfcd 100%);
+    }
+
+    a { color: inherit; }
+    .shell {
+      width: min(1360px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(380px, 0.92fr);
+      gap: 20px;
+      padding: 24px;
+      align-items: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-self: start;
+      width: fit-content;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge.accent { color: var(--accent); background: var(--accent-soft); }
+    .badge.support { color: var(--support); background: var(--support-soft); }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    h1 { font-size: clamp(28px, 4vw, 56px); text-wrap: balance; }
+    h2 { font-size: clamp(26px, 2.3vw, 36px); text-wrap: balance; }
+    h3 { font-size: 22px; }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.78;
+    }
+
+    .hero-copy,
+    .hero-side,
+    .panel,
+    .control {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-copy {
+      align-content: start;
+    }
+
+    .hero-copy h1 {
+      max-width: 9ch;
+    }
+
+    .hero-copy p {
+      max-width: 56ch;
+    }
+
+    .hero-side {
+      align-content: start;
+      min-width: 0;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:focus-visible,
+    textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .btn.primary {
+      color: #fff8f4;
+      background: linear-gradient(135deg, var(--accent), #b8502c);
+      box-shadow: 0 16px 28px rgba(184, 80, 44, 0.24);
+    }
+
+    .btn.secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.82);
+      border-color: var(--line);
+    }
+
+    .notice {
+      display: grid;
+      gap: 6px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      line-height: 1.5;
+      background: rgba(102, 115, 126, 0.08);
+      color: #51606a;
+    }
+
+    .notice strong {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .notice span {
+      font-size: 14px;
+    }
+
+    .notice.live {
+      background: rgba(29, 112, 100, 0.1);
+      border-color: rgba(29, 112, 100, 0.16);
+      color: #1f6158;
+    }
+
+    .notice.fallback {
+      background: rgba(210, 106, 61, 0.12);
+      border-color: rgba(210, 106, 61, 0.2);
+      color: #8f4426;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.82fr);
+    }
+
+    .panel-wrap {
+      padding: 24px;
+    }
+
+    .metric-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .hero-side .metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric {
+      min-height: 150px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--paper-strong);
+    }
+
+    .hero-side .metric {
+      min-height: 118px;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .metric.hot {
+      border-color: rgba(210, 106, 61, 0.28);
+      box-shadow: inset 0 0 0 1px rgba(210, 106, 61, 0.08);
+    }
+
+    .metric.support {
+      background: linear-gradient(160deg, rgba(29, 112, 100, 0.1), var(--paper-strong));
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 40px;
+      line-height: 1;
+      margin-bottom: 10px;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .hero-side .metric strong {
+      font-size: clamp(28px, 3vw, 38px);
+      margin-bottom: 0;
+    }
+
+    .hero-side .metric span {
+      font-size: 14px;
+    }
+
+    .caption {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mini {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--paper-strong);
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 14px 16px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(24, 36, 45, 0.16);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font: inherit;
+      resize: vertical;
+    }
+
+    code {
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 1360px);
+      }
+
+      .hero,
+      .panel-wrap {
+        padding: 18px;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card hero">
+      <div class="hero-copy">
+        <div class="badge accent">Sky Workspace / Overview</div>
+        <h1>把工作台做成真正能联调、能演示、能回看的一张首页</h1>
+        <p>这页优先负责回答三件事：今天有没有单、履约压力高不高、当前展示的是不是真实数据。如果真实链路不可用，它会自动回退到演示数据，不让首页空掉。</p>
+        <div class="btn-row">
+          <a class="btn primary" href="http://127.0.0.1/ws-monitor.html">打开提醒监控台</a>
+          <a class="btn secondary" href="http://127.0.0.1/report-center.html">打开报表中心</a>
+          <a class="btn secondary" href="http://127.0.0.1:8080/doc.html">打开接口文档</a>
+        </div>
+        <div class="notice" id="originNotice">
+          <strong id="originLabel">准备中</strong>
+          <span id="originText">正在判断数据来源。</span>
+        </div>
+      </div>
+
+      <aside class="hero-side">
+        <div class="badge support">工作台状态</div>
+        <h2>实时概览</h2>
+        <div class="metric-grid">
+          <article class="metric">
+            <strong id="todayOrders">0</strong>
+            <span>今日订单</span>
+          </article>
+          <article class="metric support">
+            <strong id="todayTurnover">0.00</strong>
+            <span>今日营业额</span>
+          </article>
+          <article class="metric">
+            <strong id="todayUsers">0</strong>
+            <span>今日新增用户</span>
+          </article>
+          <article class="metric">
+            <strong id="todayCompletionRate">0.00%</strong>
+            <span>今日完成率</span>
+          </article>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <section class="card panel-wrap panel">
+        <div class="badge support">监控与经营</div>
+        <h2>工作台实时态势</h2>
+        <div class="metric-grid">
+          <article class="metric" id="pendingCard">
+            <strong id="pendingPaymentOrders">0</strong>
+            <span>待支付订单</span>
+          </article>
+          <article class="metric" id="confirmCard">
+            <strong id="toBeConfirmedOrders">0</strong>
+            <span>待接单订单</span>
+          </article>
+          <article class="metric" id="deliveryCard">
+            <strong id="deliveryInProgressOrders">0</strong>
+            <span>派送中订单</span>
+          </article>
+          <article class="metric">
+            <strong id="websocketOnlineCount">0</strong>
+            <span>实时在线连接</span>
+          </article>
+        </div>
+        <p class="caption">如果你当前是从 <code>file://</code> 打开的，这页会明确提醒你改用 <code>http://127.0.0.1/index.html</code>，这样按钮跳转和真实接口才会正常。</p>
+      </section>
+
+      <aside class="card panel-wrap control">
+        <div class="badge accent">控制台</div>
+        <h3>管理员 Token</h3>
+        <p>来源是 <code>POST /admin/employee/login</code> 返回的 <code>data.token</code>。如果你不小心把整段带引号一起贴进来，页面会自动去掉首尾引号。</p>
+
+        <form id="tokenForm">
+          <label for="tokenInput">管理员 Token</label>
+          <textarea id="tokenInput" placeholder="粘贴登录后拿到的 token"></textarea>
+          <div class="stack caption">
+            <div id="tokenStatus">Token：未保存</div>
+            <div id="modeStatus">模式：真实优先</div>
+          </div>
+          <div class="btn-row" style="margin-top: 12px;">
+            <button class="btn primary" type="submit">保存并刷新</button>
+            <button class="btn secondary" id="clearBtn" type="button">清空 Token</button>
+            <button class="btn secondary" id="demoBtn" type="button">锁定演示</button>
+          </div>
+        </form>
+
+        <div class="stack">
+          <div class="mini">
+            <strong>返回提醒监控台</strong>
+            <p>首页和监控页共用同一份管理员 token。</p>
+          </div>
+          <div class="mini">
+            <strong>进入报表中心</strong>
+            <p>Day 10 的趋势、排行和导出都在独立报表页里。</p>
+          </div>
+          <a class="btn secondary" href="http://127.0.0.1/ws-monitor.html">去提醒监控台</a>
+          <a class="btn secondary" href="http://127.0.0.1/report-center.html">去报表中心</a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const KEY = {
+      token: "sky_admin_token",
+      demo: "sky_demo_mode"
+    };
+
+    const ENV = {
+      file: location.protocol === "file:",
+      dashboardUrl: "http://127.0.0.1/index.html",
+      realtimeUrl: "/api/workspace/realtime"
+    };
+
+    const el = {
+      originNotice: document.getElementById("originNotice"),
+      originLabel: document.getElementById("originLabel"),
+      originText: document.getElementById("originText"),
+      tokenInput: document.getElementById("tokenInput"),
+      tokenForm: document.getElementById("tokenForm"),
+      tokenStatus: document.getElementById("tokenStatus"),
+      modeStatus: document.getElementById("modeStatus"),
+      clearBtn: document.getElementById("clearBtn"),
+      demoBtn: document.getElementById("demoBtn"),
+      todayOrders: document.getElementById("todayOrders"),
+      todayTurnover: document.getElementById("todayTurnover"),
+      todayUsers: document.getElementById("todayUsers"),
+      todayCompletionRate: document.getElementById("todayCompletionRate"),
+      pendingPaymentOrders: document.getElementById("pendingPaymentOrders"),
+      toBeConfirmedOrders: document.getElementById("toBeConfirmedOrders"),
+      deliveryInProgressOrders: document.getElementById("deliveryInProgressOrders"),
+      websocketOnlineCount: document.getElementById("websocketOnlineCount"),
+      pendingCard: document.getElementById("pendingCard"),
+      confirmCard: document.getElementById("confirmCard"),
+      deliveryCard: document.getElementById("deliveryCard")
+    };
+
+    function normalizeToken(value = "") {
+      return value.trim().replace(/^"+|"+$/g, "");
+    }
+
+    function getToken() {
+      return normalizeToken(localStorage.getItem(KEY.token) || "");
+    }
+
+    function isDemoLocked() {
+      return localStorage.getItem(KEY.demo) === "1";
+    }
+
+    function setNotice(type, label, text) {
+      el.originNotice.className = `notice ${type}`;
+      el.originLabel.textContent = label;
+      el.originText.textContent = text;
+    }
+
+    function updateTokenUI() {
+      const token = getToken();
+      el.tokenInput.value = token;
+      el.tokenStatus.textContent = token ? "Token：已保存" : "Token：未保存";
+      el.modeStatus.textContent = isDemoLocked() ? "模式：演示锁定" : "模式：真实优先";
+      el.demoBtn.textContent = isDemoLocked() ? "恢复真实优先" : "锁定演示";
+    }
+
+    function formatInt(value) {
+      return new Intl.NumberFormat("zh-CN").format(Number(value || 0));
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("zh-CN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Number(value || 0));
+    }
+
+    function formatPercent(value) {
+      return `${formatMoney(value)}%`;
+    }
+
+    function applyMetrics(data) {
+      const todayOrders = Number(data.todayOrders || 0);
+      const todayTurnover = Number(data.todayTurnover || 0);
+      const todayUsers = Number(data.todayUsers || 0);
+      const completionRate = Number(data.todayCompletionRate || 0);
+      const pending = Number(data.pendingPaymentOrders || 0);
+      const confirm = Number(data.toBeConfirmedOrders || 0);
+      const delivery = Number(data.deliveryInProgressOrders || 0);
+      const ws = Number(data.websocketOnlineCount || 0);
+
+      el.todayOrders.textContent = formatInt(todayOrders);
+      el.todayTurnover.textContent = formatMoney(todayTurnover);
+      el.todayUsers.textContent = formatInt(todayUsers);
+      el.todayCompletionRate.textContent = formatPercent(completionRate);
+      el.pendingPaymentOrders.textContent = formatInt(pending);
+      el.toBeConfirmedOrders.textContent = formatInt(confirm);
+      el.deliveryInProgressOrders.textContent = formatInt(delivery);
+      el.websocketOnlineCount.textContent = formatInt(ws);
+
+      [el.pendingCard, el.confirmCard, el.deliveryCard].forEach((node) => node.classList.remove("hot"));
+      if (pending > 0) el.pendingCard.classList.add("hot");
+      if (confirm > 0) el.confirmCard.classList.add("hot");
+      if (delivery > 0) el.deliveryCard.classList.add("hot");
+    }
+
+    function mockData() {
+      const index = Math.floor(Date.now() / 15000) % 3;
+      return [
+        {
+          todayOrders: 0,
+          todayTurnover: 0,
+          todayUsers: 0,
+          todayCompletionRate: 0,
+          pendingPaymentOrders: 0,
+          toBeConfirmedOrders: 0,
+          deliveryInProgressOrders: 0,
+          websocketOnlineCount: 0
+        },
+        {
+          todayOrders: 28,
+          todayTurnover: 788.5,
+          todayUsers: 9,
+          todayCompletionRate: 82,
+          pendingPaymentOrders: 2,
+          toBeConfirmedOrders: 1,
+          deliveryInProgressOrders: 3,
+          websocketOnlineCount: 2
+        },
+        {
+          todayOrders: 41,
+          todayTurnover: 1146.2,
+          todayUsers: 13,
+          todayCompletionRate: 47,
+          pendingPaymentOrders: 5,
+          toBeConfirmedOrders: 4,
+          deliveryInProgressOrders: 4,
+          websocketOnlineCount: 4
+        }
+      ][index];
+    }
+
+    async function refresh() {
+      if (isDemoLocked()) {
+        applyMetrics(mockData());
+        setNotice("fallback", "演示模式", "当前展示的是模拟经营数据。");
+        return;
+      }
+
+      if (ENV.file) {
+        applyMetrics(mockData());
+        setNotice("fallback", "本地文件", "请改用 http://127.0.0.1/index.html 打开，才能使用真实数据。");
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        applyMetrics(mockData());
+        setNotice("fallback", "缺少 Token", "还没有保存管理员 token，当前已回退到演示数据。");
+        return;
+      }
+
+      try {
+        const response = await fetch(ENV.realtimeUrl, {
+          headers: { token }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        applyMetrics(payload.data || {});
+        setNotice("live", "真实数据", "工作台指标已从实时接口刷新。");
+      } catch (error) {
+        applyMetrics(mockData());
+        setNotice("fallback", "回退演示", `真实接口暂不可用，原因：${error.message}`);
+      }
+    }
+
+    el.tokenForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      localStorage.setItem(KEY.token, normalizeToken(el.tokenInput.value));
+      updateTokenUI();
+      refresh();
+    });
+
+    el.clearBtn.addEventListener("click", () => {
+      localStorage.removeItem(KEY.token);
+      updateTokenUI();
+      refresh();
+    });
+
+    el.demoBtn.addEventListener("click", () => {
+      if (isDemoLocked()) {
+        localStorage.removeItem(KEY.demo);
+      } else {
+        localStorage.setItem(KEY.demo, "1");
+      }
+      updateTokenUI();
+      refresh();
+    });
+
+    updateTokenUI();
+    refresh();
+    setInterval(refresh, 15000);
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
- /* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -77,31 +77,53 @@ export function ConsoleShell() {
   return (
     <ConsoleContextProvider value={contextValue}>
       <div className="mode-console">
-        <div className="app-shell console-shell">
+        <div className={`app-shell console-shell console-shell-${viewMode}`}>
           <div className="console-frame">
-            <aside className="console-sidebar panel">
-              <div className="sidebar-block">
+            <aside className="console-sidebar panel console-sidebar-card">
+              <div className="sidebar-block sidebar-brand-block">
                 <span className="eyebrow support">{appCopy.consoleShell.eyebrow}</span>
-                <strong style={{ fontSize: 24 }}>{appCopy.consoleShell.title}</strong>
+                <strong className="console-brand-title">{appCopy.consoleShell.title}</strong>
                 <span className="soft-copy">{appCopy.consoleShell.description}</span>
+                <div className="button-row">
+                  <StatusPill tone={viewMode === 'admin' ? 'demo' : 'live'}>
+                    {viewMode === 'admin' ? appCopy.consoleShell.adminMode : appCopy.consoleShell.merchantMode}
+                  </StatusPill>
+                  <StatusPill tone={shopStatusQuery.data === 1 ? 'live' : 'warning'}>
+                    {getShopStatusLabel(shopStatusQuery.data)}
+                  </StatusPill>
+                </div>
               </div>
 
-              <div className="sidebar-block">
+              <div className="sidebar-block sidebar-mode-card">
                 <span className="sidebar-heading">{appCopy.consoleShell.modeTitle}</span>
                 <div className="console-toggle">
-                  <button className={viewMode === 'merchant' ? 'active' : ''} onClick={() => contextValue.setViewMode('merchant')} type="button">
+                  <button
+                    className={viewMode === 'merchant' ? 'active' : ''}
+                    onClick={() => contextValue.setViewMode('merchant')}
+                    type="button"
+                  >
                     {appCopy.consoleShell.merchantMode}
                   </button>
-                  <button className={viewMode === 'admin' ? 'active' : ''} onClick={() => contextValue.setViewMode('admin')} type="button">
+                  <button
+                    className={viewMode === 'admin' ? 'active' : ''}
+                    onClick={() => contextValue.setViewMode('admin')}
+                    type="button"
+                  >
                     {appCopy.consoleShell.adminMode}
                   </button>
                 </div>
-                <StatusPill tone={shopStatusQuery.data === 1 ? 'live' : 'warning'}>
-                  {getShopStatusLabel(shopStatusQuery.data)}
-                </StatusPill>
+                <InlineNotice
+                  body={
+                    viewMode === 'admin'
+                      ? '管理员视图会补充分类管理和员工管理，适合做系统配置与全量巡检。'
+                      : '运营台视图会聚焦接单、菜品、套餐、店铺状态和经营报表。'
+                  }
+                  title={viewMode === 'admin' ? '当前是管理员视图' : '当前是运营台视图'}
+                  tone={viewMode === 'admin' ? 'fallback' : 'live'}
+                />
               </div>
 
-              <nav className="sidebar-block">
+              <nav className="sidebar-block sidebar-nav-block">
                 <span className="sidebar-heading">{appCopy.consoleShell.navTitle}</span>
                 {navItems.map((item) => (
                   <NavLink className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`} key={item.to} to={item.to}>
@@ -110,7 +132,7 @@ export function ConsoleShell() {
                 ))}
               </nav>
 
-              <div className="sidebar-block">
+              <div className="sidebar-block sidebar-profile-card">
                 <span className="sidebar-heading">{appCopy.consoleShell.profileTitle}</span>
                 {profile ? (
                   <AvatarChip subtitle={profile.userName} title={profile.name} />

@@ -5,21 +5,21 @@ export const appCopy = {
   },
   notFound: {
     eyebrow: 'Sky Take Out',
-    title: '这条路还没有铺好。',
+    title: '这个入口还没有铺好路。',
     description: '你可以先回到顾客端继续点餐，或者去后台继续处理经营任务。',
-    customerAction: '去顾客端',
-    consoleAction: '去后台',
+    customerAction: '前往顾客端',
+    consoleAction: '前往后台',
   },
   customerShell: {
     eyebrow: 'Customer / Mobile Ordering',
     title: '苍穹外卖',
-    description: '移动端点餐入口，顾客第一次进入会自动完成 mock 登录。',
+    description: '移动端点餐入口。首次进入会自动完成 mock 登录，再按真实接口读取菜单、购物车和订单。',
     sessionPending: '正在建立顾客会话',
     sessionReady: '当前用户 ID',
     connectTitle: '正在连接顾客侧会话',
-    connectBody: '前端正在按当前 mock 登录策略自动向 /user/user/login 申请顾客 token。',
+    connectBody: '前端会按当前 mock 登录策略自动调用 /user/user/login 申请顾客 token。',
     errorTitle: '顾客登录失败',
-    errorBody: '无法自动创建顾客会话，请先确认后端 8080 已启动。',
+    errorBody: '无法自动创建顾客会话，请先确认后端 8080 已经启动。',
     loadingTitle: '正在初始化顾客入口',
     loadingBody: '顾客端正在准备 token、读取营业状态，并预热页面需要的查询。',
     nav: {
@@ -32,7 +32,7 @@ export const appCopy = {
   consoleShell: {
     eyebrow: 'Console / Operations Hub',
     title: '苍穹运营台',
-    description: '同一后台里切换商家运营视图和完整管理员视图，接口仍然走现有 admin token。',
+    description: '同一套后台里可以切换商家运营视图和管理员视图，接口仍然沿用现有 admin token。',
     modeTitle: '视角切换',
     navTitle: '主导航',
     profileTitle: '当前身份',
@@ -63,7 +63,10 @@ export const appCopy = {
     uploadErrorTitle: '图片上传失败',
     orderActionSuccess: (action: string, orderNumber: string) => `订单 ${orderNumber} 已执行“${action}”操作。`,
     orderActionErrorTitle: (action: string) => `订单${action}失败`,
-    shopStatusSuccess: (isRunning: boolean) => isRunning ? '店铺已切换为营业中，顾客端可以继续下单。' : '店铺已切换为打烊中，顾客端下单入口会被禁用。',
+    shopStatusSuccess: (isRunning: boolean) =>
+      isRunning
+        ? '店铺已切换为营业中，顾客端可以继续下单。'
+        : '店铺已切换为打烊中，顾客端下单入口会被禁用。',
     shopStatusErrorTitle: '店铺状态切换失败',
     exportSuccess: '报表文件已开始下载，你可以继续切换日期范围查看趋势。',
     exportErrorTitle: '报表导出失败',
@@ -74,7 +77,8 @@ export const appCopy = {
   },
   customerHome: {
     heroTitle: '把点餐首页做成真正能成交的移动入口',
-    heroDescription: '顾客端这版优先保证真正能点单：营业状态、分类、菜品、套餐、购物车、地址簿和订单动作都直接连现在的 user 接口。',
+    heroDescription:
+      '这版顾客端优先保证真实可下单：营业状态、分类、菜品、套餐、购物车、地址簿和订单动作都直接连接现有 user 接口。',
     openCart: '打开购物车',
     viewOrders: '查看订单',
     cartCountLabel: '购物车件数',
@@ -84,19 +88,19 @@ export const appCopy = {
     addressLabel: '收货地址',
     addressHint: '当前默认地址',
     userLabel: '当前顾客',
-    userHint: 'mock 登录已接现有 user token',
+    userHint: 'mock 登录已接入现有 user token',
     shopClosedTitle: '店铺当前打烊中',
     shopClosedBody: '后端返回店铺当前不营业，所以首页仍可浏览，但会禁用提交订单。',
     shopOpenTitle: '门店状态正常',
     shopOpenBody: '当前门店营业正常，你可以直接把菜品或套餐加入购物车，再提交订单。',
     serviceErrorTitle: '点餐首页加载失败',
     serviceErrorBody: '顾客端分类、菜品、套餐或购物车接口暂时不可用，请先确认后端 8080 与用户端接口已经启动。',
-    dishSectionTitle: '今日点什么',
-    dishSectionDescription: '分类切换会触发对应接口查询；为了让移动端单手操作更顺，分类和菜品都尽量压成卡片流。',
+    dishSectionTitle: '今天想吃什么',
+    dishSectionDescription: '分类切换会触发对应接口查询。为了让移动端单手操作更顺，分类和菜品都尽量压成卡片流。',
     setmealSectionTitle: '套餐专区',
-    setmealSectionDescription: '套餐专区会继续使用现有 user/setmeal/list。第一版先把列表、加购和价格反馈做顺。',
+    setmealSectionDescription: '套餐专区继续使用现有 /user/setmeal/list。第一版先把列表、加购和价格反馈做顺。',
     cartTitle: '购物车与提交订单',
-    cartDescription: '这里直接串上购物车、默认地址、备注和提交订单接口，方便你马上从顾客视角走闭环。',
+    cartDescription: '这里直接串上购物车、默认地址、备注和提交订单接口，方便你马上从顾客视角走完整闭环。',
     emptyCartTitle: '购物车还空着',
     emptyCartBody: '先选几道菜，购物车才会在这里出现真实明细。',
     noDefaultAddressTitle: '下单前先补一个默认地址',
@@ -114,7 +118,8 @@ export const appCopy = {
     stickyEmpty: '先去选菜',
     submitSuccessBody: (orderNumber: string) => `订单 ${orderNumber} 已创建，现在去订单中心完成支付。`,
     journeyTitle: '四步完成一次下单',
-    journeyDescription: '把“选菜、补地址、提交订单、完成支付”拆成短步骤，顾客更容易判断下一步该做什么。',
+    journeyDescription:
+      '把“选菜、补地址、提交订单、完成支付”拆成短步骤，顾客更容易判断下一步该做什么。',
     journeyBrowseTitle: '先选好想吃的菜',
     journeyBrowseBody: '菜品和套餐都已经连真实接口，先把购物车装起来。',
     journeyAddressTitle: '补一个默认地址',
@@ -122,7 +127,7 @@ export const appCopy = {
     journeySubmitTitle: '提交订单',
     journeySubmitBody: '备注、餐具份数和打包费都已经进同一条结算链路。',
     journeyPayTitle: '去订单中心完成支付',
-    journeyPayBody: '当前支付仍是 mock 流程，但状态回写和列表刷新都已经接好。',
+    journeyPayBody: '当前支付仍然是 mock 流程，但状态回写和列表刷新都已经接好。',
     addSuccessTitle: '已加入购物车',
     addSuccessBody: (name: string) => `${name} 已加入购物车，可以继续加菜或直接去结算。`,
     removeSuccessTitle: '已更新购物车',
@@ -132,7 +137,8 @@ export const appCopy = {
   },
   customerOrders: {
     heroTitle: '订单中心会把真实状态、支付、催单和再来一单连起来',
-    heroDescription: '这里直接使用 historyOrders / orderDetail / payment / reminder / cancel / repetition，顾客端常用动作都能在一页里完成。',
+    heroDescription:
+      '这里直接使用 historyOrders / orderDetail / payment / reminder / cancel / repetition，顾客端常用动作都能在一页里完成。',
     filters: [
       { label: '全部订单', value: null },
       { label: '待支付', value: 1 },
@@ -168,7 +174,7 @@ export const appCopy = {
     remindSuccessTitle: '催单已发送',
     remindSuccessBody: (number: string) => `已向门店发送订单 ${number} 的催单提醒。`,
     cancelSuccessTitle: '订单已取消',
-    cancelSuccessBody: (number: string) => `订单 ${number} 已取消，列表状态已同步刷新。`,
+    cancelSuccessBody: (number: string) => `订单 ${number} 已取消，列表状态已经同步刷新。`,
     repeatSuccessTitle: '同款已重新加入购物车',
     repeatSuccessBody: (number: string) => `订单 ${number} 的商品已经放回购物车，现在可以回首页继续确认。`,
     repeatSuccessAction: '回到点餐页',
@@ -185,7 +191,8 @@ export const appCopy = {
   },
   customerAddresses: {
     heroTitle: '地址簿要尽量轻，动作却要完整',
-    heroDescription: '地址簿页把新增、修改、删除、设默认这几条接口合到一页，顾客可以直接把默认地址准备好再去下单。',
+    heroDescription:
+      '地址簿页把新增、修改、删除、设默认这几条接口合到一页，顾客可以直接把默认地址准备好再去下单。',
     createAction: '新增地址',
     modalCreateTitle: '新增收货地址',
     modalEditTitle: '更新送达地址',
@@ -206,6 +213,11 @@ export const appCopy = {
   },
   customerProfile: {
     heroTitle: '个人区负责把当前会话状态讲清楚',
-    heroDescription: '第一版个人区不追求做得很重，重点是把当前用户、门店状态和常用入口都放在一块，方便联调。',
+    heroDescription:
+      '第一版个人区不追求做得很重，重点是把当前用户、门店状态和常用入口都放在一块，方便联调。',
+    sessionTitle: '当前会话',
+    sessionBody: '这里会显示当前 mock 顾客登录状态、用户编号和门店营业状态。',
+    actionsTitle: '快捷入口',
+    actionsBody: '保留订单中心、地址簿和点餐首页三个高频入口，方便从任何状态回跳。',
   },
 } as const;

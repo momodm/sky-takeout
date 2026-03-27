@@ -1,0 +1,798 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>苍穹外卖提醒监控台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3ecdf;
+      --paper: rgba(255, 251, 245, 0.88);
+      --paper-strong: rgba(255, 255, 255, 0.95);
+      --ink: #18242d;
+      --muted: #66737e;
+      --accent: #d26a3d;
+      --accent-soft: rgba(210, 106, 61, 0.12);
+      --support: #1d7064;
+      --support-soft: rgba(29, 112, 100, 0.12);
+      --line: rgba(24, 36, 45, 0.1);
+      --shadow: 0 28px 80px rgba(70, 54, 38, 0.14);
+      --radius-xl: 30px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --focus: 0 0 0 3px rgba(210, 106, 61, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(210, 106, 61, 0.14), transparent 25%),
+        radial-gradient(circle at 88% 10%, rgba(29, 112, 100, 0.12), transparent 22%),
+        linear-gradient(180deg, #f8f3eb 0%, var(--bg) 45%, #eadfcd 100%);
+    }
+
+    .shell {
+      width: min(1360px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(400px, 0.94fr);
+      gap: 20px;
+      padding: 24px;
+      align-items: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-self: start;
+      width: fit-content;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge.accent { color: var(--accent); background: var(--accent-soft); }
+    .badge.support { color: var(--support); background: var(--support-soft); }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    h1 { font-size: clamp(27px, 3.7vw, 52px); text-wrap: balance; }
+    h2 { font-size: clamp(26px, 2.2vw, 36px); text-wrap: balance; }
+    h3 { font-size: 22px; }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.78;
+    }
+
+    .hero-copy,
+    .hero-side,
+    .grid,
+    .control {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-copy {
+      align-content: start;
+    }
+
+    .hero-copy h1 {
+      max-width: 9ch;
+    }
+
+    .hero-copy p {
+      max-width: 56ch;
+    }
+
+    .hero-side {
+      align-content: start;
+      min-width: 0;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:focus-visible,
+    textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .btn.primary {
+      color: #fff8f4;
+      background: linear-gradient(135deg, var(--accent), #b8502c);
+      box-shadow: 0 16px 28px rgba(184, 80, 44, 0.24);
+    }
+
+    .btn.secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.82);
+      border-color: var(--line);
+    }
+
+    .notice {
+      display: grid;
+      gap: 6px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      line-height: 1.5;
+      background: rgba(102, 115, 126, 0.08);
+      color: #51606a;
+    }
+
+    .notice strong {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .notice span {
+      font-size: 14px;
+    }
+
+    .notice.live {
+      background: rgba(29, 112, 100, 0.1);
+      border-color: rgba(29, 112, 100, 0.16);
+      color: #1f6158;
+    }
+
+    .notice.fallback {
+      background: rgba(210, 106, 61, 0.12);
+      border-color: rgba(210, 106, 61, 0.2);
+      color: #8f4426;
+    }
+
+    .layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.82fr);
+    }
+
+    .panel-wrap {
+      padding: 24px;
+    }
+
+    .metric-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .hero-side .metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric {
+      min-height: 150px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--paper-strong);
+    }
+
+    .hero-side .metric {
+      min-height: 118px;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 10px;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .metric span {
+      display: block;
+      line-height: 1.45;
+    }
+
+    .hero-side .metric strong {
+      font-size: clamp(24px, 2.4vw, 34px);
+      line-height: 0.96;
+      margin-bottom: 0;
+    }
+
+    #lastType,
+    #lastTime {
+      font-size: clamp(18px, 1.9vw, 28px);
+      letter-spacing: -0.03em;
+      word-break: break-word;
+    }
+
+    #lastTime {
+      line-height: 1.05;
+    }
+
+    .hero-side .metric span {
+      font-size: 14px;
+    }
+
+    .metric.alert {
+      background: linear-gradient(160deg, rgba(210, 106, 61, 0.1), var(--paper-strong));
+    }
+
+    .metric.support {
+      background: linear-gradient(160deg, rgba(29, 112, 100, 0.1), var(--paper-strong));
+    }
+
+    .caption {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mini {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--paper-strong);
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 14px 16px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(24, 36, 45, 0.16);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font: inherit;
+      resize: vertical;
+    }
+
+    .log {
+      min-height: 320px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, #121b23, #1a2530);
+      color: #edf4f8;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    code {
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 1360px);
+      }
+
+      .hero,
+      .panel-wrap {
+        padding: 18px;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card hero">
+      <div class="hero-copy">
+        <div class="badge accent">WebSocket / Live Monitor</div>
+        <h1>把来单提醒看得见、连得上、查得快</h1>
+        <p>这页负责判断提醒链路到底有没有亮。它会显示最近消息类型、在线连接数、实时态势，以及一段可直接回看的消息日志。</p>
+        <div class="btn-row">
+          <button class="btn primary" id="connectBtn" type="button">连接提醒通道</button>
+          <button class="btn secondary" id="disconnectBtn" type="button">断开连接</button>
+          <a class="btn secondary" href="http://127.0.0.1/report-center.html">进入报表中心</a>
+          <a class="btn secondary" href="http://127.0.0.1/index.html">返回工作台首页</a>
+        </div>
+        <div class="notice" id="originNotice">
+          <strong id="originLabel">准备中</strong>
+          <span id="originText">正在判断提醒链路来源。</span>
+        </div>
+      </div>
+
+      <aside class="hero-side">
+        <div class="badge support">连接总览</div>
+        <h2>实时连接状态</h2>
+        <div class="metric-grid">
+          <article class="metric alert">
+            <strong id="messageCount">0</strong>
+            <span>已接收消息</span>
+          </article>
+          <article class="metric support">
+            <strong id="onlineCount">0</strong>
+            <span>在线连接数</span>
+          </article>
+          <article class="metric">
+            <strong id="lastType">-</strong>
+            <span>最近消息类型</span>
+          </article>
+          <article class="metric">
+            <strong id="lastTime">-</strong>
+            <span>最近消息时间</span>
+          </article>
+        </div>
+        <p class="caption" id="socketUrlText">WebSocket 地址：<code id="socketUrl"></code></p>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <section class="card panel-wrap grid">
+        <div class="badge support">巡检舞台</div>
+        <h2>监控与实时态势</h2>
+        <div class="metric-grid">
+          <article class="metric">
+            <strong id="todayOrders">0</strong>
+            <span>今日订单</span>
+          </article>
+          <article class="metric support">
+            <strong id="todayTurnover">0.00</strong>
+            <span>今日营业额</span>
+          </article>
+          <article class="metric">
+            <strong id="todayUsers">0</strong>
+            <span>今日新增用户</span>
+          </article>
+          <article class="metric">
+            <strong id="todayCompletionRate">0.00%</strong>
+            <span>今日完成率</span>
+          </article>
+          <article class="metric alert">
+            <strong id="pendingPaymentOrders">0</strong>
+            <span>待支付订单</span>
+          </article>
+          <article class="metric alert">
+            <strong id="toBeConfirmedOrders">0</strong>
+            <span>待接单订单</span>
+          </article>
+          <article class="metric alert">
+            <strong id="deliveryInProgressOrders">0</strong>
+            <span>派送中订单</span>
+          </article>
+          <article class="metric support">
+            <strong id="websocketOnlineCount">0</strong>
+            <span>实时在线连接</span>
+          </article>
+        </div>
+        <div class="log" id="logBody">[等待中] 还没有收到消息。</div>
+      </section>
+
+      <aside class="card panel-wrap control">
+        <div class="badge accent">控制台</div>
+        <h3>管理员 Token</h3>
+        <p>来源是 <code>POST /admin/employee/login</code> 返回的 <code>data.token</code>。这页和工作台首页共享同一份 token。</p>
+
+        <form id="tokenForm">
+          <label for="tokenInput">管理员 Token</label>
+          <textarea id="tokenInput" placeholder="粘贴登录后拿到的 token"></textarea>
+          <div class="stack caption">
+            <div id="tokenStatus">Token：未保存</div>
+            <div id="modeStatus">模式：真实优先</div>
+          </div>
+          <div class="btn-row" style="margin-top: 12px;">
+            <button class="btn primary" type="submit">保存 Token</button>
+            <button class="btn secondary" id="clearBtn" type="button">清空 Token</button>
+            <button class="btn secondary" id="demoBtn" type="button">锁定演示</button>
+          </div>
+        </form>
+
+        <div class="stack">
+          <div class="mini">
+            <strong>跳转说明</strong>
+            <p>如果你是从 <code>file://</code> 打开的，这页会提示你改用 <code>http://127.0.0.1/ws-monitor.html</code>，否则返回首页和真实接口都会不稳定。</p>
+          </div>
+          <a class="btn secondary" href="http://127.0.0.1/report-center.html">查看报表中心</a>
+          <a class="btn secondary" href="http://127.0.0.1:8080/doc.html">查看接口文档</a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const KEY = {
+      token: "sky_admin_token",
+      demo: "sky_demo_mode"
+    };
+
+    const ENV = {
+      file: location.protocol === "file:",
+      monitorUrl: "http://127.0.0.1/ws-monitor.html",
+      realtimeUrl: "/api/workspace/realtime",
+      socketUrl: `ws://${location.hostname || "127.0.0.1"}:8080/ws/admin/orders`
+    };
+
+    const state = {
+      socket: null,
+      messages: [],
+      count: 0
+    };
+
+    const MESSAGE_LABELS = {
+      connection_ready: "通道就绪",
+      online_count_update: "在线更新",
+      new_order: "来单提醒",
+      order_reminder: "催单提醒",
+      raw_message: "原始消息"
+    };
+
+    const el = {
+      originNotice: document.getElementById("originNotice"),
+      originLabel: document.getElementById("originLabel"),
+      originText: document.getElementById("originText"),
+      tokenInput: document.getElementById("tokenInput"),
+      tokenForm: document.getElementById("tokenForm"),
+      tokenStatus: document.getElementById("tokenStatus"),
+      modeStatus: document.getElementById("modeStatus"),
+      clearBtn: document.getElementById("clearBtn"),
+      demoBtn: document.getElementById("demoBtn"),
+      connectBtn: document.getElementById("connectBtn"),
+      disconnectBtn: document.getElementById("disconnectBtn"),
+      socketUrl: document.getElementById("socketUrl"),
+      logBody: document.getElementById("logBody"),
+      messageCount: document.getElementById("messageCount"),
+      onlineCount: document.getElementById("onlineCount"),
+      lastType: document.getElementById("lastType"),
+      lastTime: document.getElementById("lastTime"),
+      todayOrders: document.getElementById("todayOrders"),
+      todayTurnover: document.getElementById("todayTurnover"),
+      todayUsers: document.getElementById("todayUsers"),
+      todayCompletionRate: document.getElementById("todayCompletionRate"),
+      pendingPaymentOrders: document.getElementById("pendingPaymentOrders"),
+      toBeConfirmedOrders: document.getElementById("toBeConfirmedOrders"),
+      deliveryInProgressOrders: document.getElementById("deliveryInProgressOrders"),
+      websocketOnlineCount: document.getElementById("websocketOnlineCount")
+    };
+
+    function normalizeToken(value = "") {
+      return value.trim().replace(/^"+|"+$/g, "");
+    }
+
+    function getToken() {
+      return normalizeToken(localStorage.getItem(KEY.token) || "");
+    }
+
+    function isDemoLocked() {
+      return localStorage.getItem(KEY.demo) === "1";
+    }
+
+    function setNotice(type, label, text) {
+      el.originNotice.className = `notice ${type}`;
+      el.originLabel.textContent = label;
+      el.originText.textContent = text;
+    }
+
+    function updateTokenUI() {
+      const token = getToken();
+      el.tokenInput.value = token;
+      el.tokenStatus.textContent = token ? "Token：已保存" : "Token：未保存";
+      el.modeStatus.textContent = isDemoLocked() ? "模式：演示锁定" : "模式：真实优先";
+      el.demoBtn.textContent = isDemoLocked() ? "恢复真实优先" : "锁定演示";
+    }
+
+    function formatInt(value) {
+      return new Intl.NumberFormat("zh-CN").format(Number(value || 0));
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("zh-CN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Number(value || 0));
+    }
+
+    function formatPercent(value) {
+      return `${formatMoney(value)}%`;
+    }
+
+    function formatMessageType(type) {
+      return MESSAGE_LABELS[type] || type || "-";
+    }
+
+    function formatMessageTime(date = new Date()) {
+      return new Intl.DateTimeFormat("zh-CN", {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(date);
+    }
+
+    function mockRealtime() {
+      const index = Math.floor(Date.now() / 12000) % 3;
+      return [
+        {
+          todayOrders: 0,
+          todayTurnover: 0,
+          todayUsers: 0,
+          todayCompletionRate: 0,
+          pendingPaymentOrders: 0,
+          toBeConfirmedOrders: 0,
+          deliveryInProgressOrders: 0,
+          websocketOnlineCount: 0
+        },
+        {
+          todayOrders: 24,
+          todayTurnover: 686.3,
+          todayUsers: 8,
+          todayCompletionRate: 78,
+          pendingPaymentOrders: 2,
+          toBeConfirmedOrders: 1,
+          deliveryInProgressOrders: 3,
+          websocketOnlineCount: 2
+        },
+        {
+          todayOrders: 39,
+          todayTurnover: 1028.4,
+          todayUsers: 12,
+          todayCompletionRate: 44,
+          pendingPaymentOrders: 5,
+          toBeConfirmedOrders: 4,
+          deliveryInProgressOrders: 4,
+          websocketOnlineCount: 4
+        }
+      ][index];
+    }
+
+    function applyRealtime(data) {
+      el.todayOrders.textContent = formatInt(data.todayOrders);
+      el.todayTurnover.textContent = formatMoney(data.todayTurnover);
+      el.todayUsers.textContent = formatInt(data.todayUsers);
+      el.todayCompletionRate.textContent = formatPercent(data.todayCompletionRate);
+      el.pendingPaymentOrders.textContent = formatInt(data.pendingPaymentOrders);
+      el.toBeConfirmedOrders.textContent = formatInt(data.toBeConfirmedOrders);
+      el.deliveryInProgressOrders.textContent = formatInt(data.deliveryInProgressOrders);
+      el.websocketOnlineCount.textContent = formatInt(data.websocketOnlineCount);
+    }
+
+    async function refreshRealtime() {
+      if (isDemoLocked()) {
+        applyRealtime(mockRealtime());
+        setNotice("fallback", "演示模式", "当前展示的是模拟态势和模拟消息。");
+        return;
+      }
+
+      if (ENV.file) {
+        applyRealtime(mockRealtime());
+        setNotice("fallback", "本地文件", "请改用 http://127.0.0.1/ws-monitor.html 打开，才能使用真实链路。");
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        applyRealtime(mockRealtime());
+        setNotice("fallback", "缺少 Token", "还没有保存管理员 token，当前已回退到演示数据。");
+        return;
+      }
+
+      try {
+        const response = await fetch(ENV.realtimeUrl, {
+          headers: { token }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        applyRealtime(payload.data || {});
+        setNotice("live", "真实数据", "实时态势已从工作台接口刷新。");
+      } catch (error) {
+        applyRealtime(mockRealtime());
+        setNotice("fallback", "回退演示", `真实接口暂不可用，原因：${error.message}`);
+      }
+    }
+
+    function renderLog() {
+      if (!state.messages.length) {
+        el.logBody.textContent = "[等待中] 还没有收到消息。";
+        return;
+      }
+      el.logBody.textContent = state.messages
+        .slice(-18)
+        .reverse()
+        .map((item) => `[${item.at}] ${item.type}\n${JSON.stringify(item.payload, null, 2)}`)
+        .join("\n\n");
+      el.logBody.scrollTop = el.logBody.scrollHeight;
+    }
+
+    function addMessage(type, payload) {
+      const time = formatMessageTime(new Date());
+
+      state.messages.push({ type, payload, at: time });
+      state.messages = state.messages.slice(-160);
+      state.count += 1;
+
+      el.messageCount.textContent = formatInt(state.count);
+      el.lastType.textContent = formatMessageType(type);
+      el.lastTime.textContent = time;
+      if (typeof payload.onlineCount !== "undefined") {
+        el.onlineCount.textContent = formatInt(payload.onlineCount);
+      }
+      renderLog();
+    }
+
+    function startMockMessages() {
+      addMessage("connection_ready", {
+        onlineCount: 1,
+        serverTime: new Date().toISOString()
+      });
+    }
+
+    function disconnectSocket() {
+      if (state.socket) {
+        state.socket.close();
+        state.socket = null;
+      }
+    }
+
+    function connectSocket() {
+      disconnectSocket();
+
+      if (ENV.file || isDemoLocked()) {
+        startMockMessages();
+        setNotice("fallback", "模拟消息", "当前处于本地文件或演示模式，已切换到模拟消息流。");
+        return;
+      }
+
+      try {
+        state.socket = new WebSocket(ENV.socketUrl);
+        setNotice("live", "连接中", "正在建立真实提醒通道。");
+        state.socket.onopen = () => {
+          setNotice("live", "已连接", "真实提醒通道已建立连接。");
+        };
+        state.socket.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            addMessage(payload.type || "raw_message", payload);
+          } catch (_error) {
+            addMessage("raw_message", { raw: event.data });
+          }
+        };
+        state.socket.onerror = () => {
+          setNotice("fallback", "连接异常", "真实提醒通道连接异常，已回退到模拟消息流。");
+          disconnectSocket();
+          startMockMessages();
+        };
+        state.socket.onclose = () => {
+          if (!isDemoLocked()) {
+            setNotice("fallback", "已断开", "真实提醒通道已断开，已回退到模拟消息流。");
+          }
+        };
+      } catch (_error) {
+        setNotice("fallback", "创建失败", "无法创建真实提醒通道，已回退到模拟消息流。");
+        startMockMessages();
+      }
+    }
+
+    el.socketUrl.textContent = ENV.socketUrl;
+
+    el.tokenForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      localStorage.setItem(KEY.token, normalizeToken(el.tokenInput.value));
+      updateTokenUI();
+      refreshRealtime();
+    });
+
+    el.clearBtn.addEventListener("click", () => {
+      localStorage.removeItem(KEY.token);
+      updateTokenUI();
+      refreshRealtime();
+    });
+
+    el.demoBtn.addEventListener("click", () => {
+      if (isDemoLocked()) {
+        localStorage.removeItem(KEY.demo);
+      } else {
+        localStorage.setItem(KEY.demo, "1");
+      }
+      updateTokenUI();
+      refreshRealtime();
+      connectSocket();
+    });
+
+    el.connectBtn.addEventListener("click", connectSocket);
+    el.disconnectBtn.addEventListener("click", () => {
+      disconnectSocket();
+      setNotice("fallback", "已断开", "提醒通道已手动断开。");
+    });
+
+    updateTokenUI();
+    refreshRealtime();
+    connectSocket();
+    setInterval(refreshRealtime, 15000);
+  </script>
+</body>
+</html>

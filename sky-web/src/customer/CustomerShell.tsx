@@ -40,6 +40,7 @@ export function CustomerShell() {
       clearUserToken();
     },
   });
+
   const retryBootstrap = () => {
     clearUserToken();
     bootstrapMutation.reset();
@@ -81,28 +82,32 @@ export function CustomerShell() {
   return (
     <CustomerContextProvider value={contextValue}>
       <div className="mode-customer">
-        <div className="app-shell">
-          <header className="panel section-card">
-            <div className="row-between">
-              <div className="stack" style={{ gap: 8 }}>
+        <div className="app-shell customer-shell">
+          <header className="panel section-card customer-shell-card">
+            <div className="row-between customer-shell-head">
+              <div className="stack customer-shell-brand" style={{ gap: 10 }}>
                 <span className="eyebrow">{appCopy.customerShell.eyebrow}</span>
-                <div className="stack" style={{ gap: 4 }}>
-                  <strong style={{ fontSize: 24 }}>{appCopy.customerShell.title}</strong>
+                <div className="stack" style={{ gap: 6 }}>
+                  <strong className="customer-shell-title">{appCopy.customerShell.title}</strong>
                   <span className="soft-copy">{appCopy.customerShell.description}</span>
                 </div>
               </div>
-              <div className="stack" style={{ justifyItems: 'end' }}>
+
+              <div className="stack customer-shell-status" style={{ gap: 10 }}>
                 <StatusPill tone={shopStatusQuery.data === 1 ? 'live' : 'warning'}>
                   门店状态：{getShopStatusLabel(shopStatusQuery.data)}
                 </StatusPill>
                 {currentUserQuery.data ? (
-                  <span className="inline-meta">{appCopy.customerShell.sessionReady}：{currentUserQuery.data.id}</span>
+                  <span className="inline-meta">
+                    {appCopy.customerShell.sessionReady} · #{currentUserQuery.data.id}
+                  </span>
                 ) : (
                   <span className="inline-meta">{appCopy.customerShell.sessionPending}</span>
                 )}
               </div>
             </div>
-            <nav className="customer-nav">
+
+            <nav className="customer-nav customer-shell-nav">
               <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} end to="/customer">
                 {appCopy.customerShell.nav.home}
               </NavLink>
@@ -116,6 +121,7 @@ export function CustomerShell() {
                 {appCopy.customerShell.nav.profile}
               </NavLink>
             </nav>
+
             {bootstrapMutation.isPending ? (
               <InlineNotice body={appCopy.customerShell.connectBody} title={appCopy.customerShell.connectTitle} tone="live" />
             ) : null}

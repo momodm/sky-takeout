@@ -37,15 +37,15 @@ export function ConsoleLoginPage() {
           <div className="legend-grid">
             <div className="legend-item">
               <span className="legend-dot accent" />
-              <span className="soft-copy">商家运营视图：工作台、来单提醒、订单流转</span>
+              <span className="soft-copy">商家运营视图：工作台、来单提醒、订单流转。</span>
             </div>
             <div className="legend-item">
               <span className="legend-dot support" />
-              <span className="soft-copy">管理员视图：再叠加员工、分类、报表和系统概览</span>
+              <span className="soft-copy">管理员视图：再叠加员工、分类、报表和系统概览。</span>
             </div>
             <div className="legend-item">
               <span className="legend-dot warning" />
-              <span className="soft-copy">品牌化产品风，不走默认 SaaS 模板外观</span>
+              <span className="soft-copy">整体按餐饮运营台来做，不走默认 SaaS 模板风。</span>
             </div>
           </div>
         </div>
