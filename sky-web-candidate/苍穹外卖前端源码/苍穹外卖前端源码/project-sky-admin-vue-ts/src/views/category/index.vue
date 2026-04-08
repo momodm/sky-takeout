@@ -1,146 +1,129 @@
 <template>
   <div class="dashboard-container">
     <div class="container">
-      <div class="tableBar"
-           style="display: inline-block; width: 100%">
+      <div class="tableBar" style="display: inline-block; width: 100%">
         <label style="margin-right: 10px">分类名称：</label>
-        <el-input v-model="name"
-                  placeholder="请填写分类名称"
-                  style="width: 15%"
-                  clearable
-                  @clear="init"
-                  @keyup.enter.native="init" />
+        <el-input
+          v-model="name"
+          placeholder="请输入分类名称"
+          style="width: 15%"
+          clearable
+          @clear="init"
+          @keyup.enter.native="init"
+        />
 
         <label style="margin-right: 5px; margin-left: 20px">分类类型：</label>
-        <el-select v-model="categoryType"
-                   placeholder="请选择"
-                   clearable
-                   style="width: 15%"
-                   @clear="init">
-          <el-option v-for="item in options"
-                     :key="item.value"
-                     :label="item.label"
-                     :value="item.value" />
+        <el-select
+          v-model="categoryType"
+          placeholder="请选择"
+          clearable
+          style="width: 15%"
+          @clear="init"
+        >
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
 
         <div style="float: right">
-          <el-button type="primary"
-                     class="continue"
-                     @click="addClass('class')">
+          <el-button type="primary" class="continue" @click="addClass('class')">
             + 新增菜品分类
           </el-button>
-          <el-button type="primary"
-                     style="margin-left:20px"
-                     @click="addClass('meal')">
+          <el-button type="primary" style="margin-left: 20px" @click="addClass('meal')">
             + 新增套餐分类
           </el-button>
         </div>
 
-        <el-button class="normal-btn continue"
-                   @click="init(true)">
-          查询
-        </el-button>
+        <el-button class="normal-btn continue" @click="init(true)">查询</el-button>
       </div>
-      <el-table v-if="tableData.length"
-                :data="tableData"
-                stripe
-                class="tableBox">
-        <el-table-column prop="name"
-                         label="分类名称" />
-        <el-table-column prop="type"
-                         label="分类类型">
+
+      <el-table v-if="tableData.length" :data="tableData" stripe class="tableBox">
+        <el-table-column prop="name" label="分类名称" />
+        <el-table-column prop="type" label="分类类型">
           <template slot-scope="scope">
             <span>{{ scope.row.type == '1' ? '菜品分类' : '套餐分类' }}</span>
           </template>
         </el-table-column>
-
-        <el-table-column prop="sort"
-                         label="排序" />
+        <el-table-column prop="sort" label="排序" />
         <el-table-column label="状态">
           <template slot-scope="scope">
-            <div class="tableColumn-status"
-                 :class="{ 'stop-use': String(scope.row.status) === '0' }">
+            <div class="tableColumn-status" :class="{ 'stop-use': String(scope.row.status) === '0' }">
               {{ String(scope.row.status) === '0' ? '禁用' : '启用' }}
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="updateTime"
-                         label="操作时间" />
-        <el-table-column label="操作"
-                         width="200"
-                         align="center">
+        <el-table-column prop="updateTime" label="操作时间" />
+        <el-table-column label="操作" width="200" align="center">
           <template slot-scope="scope">
-            <el-button type="text"
-                       size="small"
-                       class="blueBug"
-                       @click="editHandle(scope.row)">
+            <el-button type="text" size="small" class="blueBug" @click="editHandle(scope.row)">
               修改
             </el-button>
-            <el-button type="text"
-                       size="small"
-                       class="delBut"
-                       @click="deleteHandle(scope.row.id)">
+            <el-button type="text" size="small" class="delBut" @click="deleteHandle(scope.row.id)">
               删除
             </el-button>
-            <el-button type="text"
-                       size="small"
-                       class="non"
-                       :class="{
-                         blueBug: scope.row.status == '0',
-                         delBut: scope.row.status != '0'
-                       }"
-                       @click="statusHandle(scope.row)">
+            <el-button
+              type="text"
+              size="small"
+              class="non"
+              :class="{ blueBug: scope.row.status == '0', delBut: scope.row.status != '0' }"
+              @click="statusHandle(scope.row)"
+            >
               {{ scope.row.status == '1' ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
-      <Empty v-else
-             :is-search="isSearch" />
-      <el-pagination v-if="counts > 10"
-                     class="pageList"
-                     :page-sizes="[10, 20, 30, 40]"
-                     :page-size="pageSize"
-                     layout="total, sizes, prev, pager, next, jumper"
-                     :total="counts"
-                     @size-change="handleSizeChange"
-                     @current-change="handleCurrentChange" />
+
+      <Empty v-else :is-search="isSearch" />
+
+      <el-pagination
+        v-if="counts > 10"
+        class="pageList"
+        :page-sizes="[10, 20, 30, 40]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="counts"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </div>
-    <el-dialog :title="classData.title"
-               :visible.sync="classData.dialogVisible"
-               width="30%"
-               :before-close="handleClose">
-      <el-form ref="classData"
-               :model="classData"
-               class="demo-form-inline"
-               :rules="rules"
-               label-width="100px">
-        <el-form-item label="分类名称："
-                      prop="name">
-          <el-input v-model="classData.name"
-                    placeholder="请输入分类名称"
-                    maxlength="20" />
+
+    <el-dialog
+      :title="classData.title"
+      :visible.sync="classData.dialogVisible"
+      width="30%"
+      :before-close="handleClose"
+    >
+      <el-form
+        ref="classData"
+        :model="classData"
+        class="demo-form-inline"
+        :rules="rules"
+        label-width="100px"
+      >
+        <el-form-item label="分类名称：" prop="name">
+          <el-input v-model="classData.name" placeholder="请输入分类名称" maxlength="20" />
         </el-form-item>
-        <el-form-item label="排序："
-                      prop="sort">
-          <el-input v-model="classData.sort"
-                    placeholder="请输入排序" />
+        <el-form-item label="排序：" prop="sort">
+          <el-input v-model="classData.sort" placeholder="请输入排序" />
         </el-form-item>
       </el-form>
-      <span slot="footer"
-            class="dialog-footer">
-        <el-button size="medium"
-                   @click="
-            ;(classData.dialogVisible = false), $refs.classData.resetFields()
-                   ">取 消</el-button>
-        <el-button type="primary"
-                   :class="{ continue: actionType === 'add' }"
-                   size="medium"
-                   @click="submitForm()">确 定</el-button>
-        <el-button v-if="action != 'edit'"
-                   type="primary"
-                   size="medium"
-                   @click="submitForm('go')">
+      <span slot="footer" class="dialog-footer">
+        <el-button size="medium" @click=";(classData.dialogVisible = false), $refs.classData.resetFields()">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :class="{ continue: actionType === 'add' }"
+          size="medium"
+          @click="submitForm()"
+        >
+          确定
+        </el-button>
+        <el-button v-if="action != 'edit'" type="primary" size="medium" @click="submitForm('go')">
           保存并继续添加
         </el-button>
       </span>
@@ -150,7 +133,6 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import HeadLable from '@/components/HeadLable/index.vue'
 import {
   getCategoryPage,
   deleCategory,
@@ -163,7 +145,6 @@ import Empty from '@/components/Empty/index.vue'
 @Component({
   name: 'Category',
   components: {
-    HeadLable,
     Empty
   }
 })
@@ -178,20 +159,21 @@ export default class extends Vue {
       label: '套餐分类'
     }
   ]
-  private actionType: string = ''
+
+  private actionType = ''
   private id = ''
-  private status = ''
-  private categoryType: number = null
-  private name: string = ''
-  private action: string = ''
-  private counts: number = 0
-  private page: number = 1
-  private pageSize: number = 10
+  private status: any = ''
+  private categoryType: number | null = null
+  private name = ''
+  private action = ''
+  private counts = 0
+  private page = 1
+  private pageSize = 10
   private tableData = []
   private type = ''
-  private isSearch: boolean = false
+  private isSearch = false
   private classData: any = {
-    title: '添加菜品分类',
+    title: '新增菜品分类',
     dialogVisible: false,
     categoryId: '',
     name: '',
@@ -205,14 +187,13 @@ export default class extends Vue {
           required: true,
           trigger: 'blur',
           validator: (rule: any, value: string, callback: Function) => {
-            // const reg = /[\u4e00-\u9fa5]/
-            var reg = new RegExp('^[A-Za-z\u4e00-\u9fa5]+$')
+            const reg = new RegExp('^[A-Za-z\u4e00-\u9fa5]+$')
             if (!value) {
               callback(new Error(this.classData.title + '不能为空'))
             } else if (value.length < 2) {
-              callback(new Error('分类名称输入不符，请输入2-20个字符'))
+              callback(new Error('分类名称不符合要求，请输入 2-20 个字符'))
             } else if (!reg.test(value)) {
-              callback(new Error('分类名称包含特殊字符'))
+              callback(new Error('分类名称不能包含特殊字符'))
             } else {
               callback()
             }
@@ -227,9 +208,9 @@ export default class extends Vue {
             if (value || String(value) === '0') {
               const reg = /^\d+$/
               if (!reg.test(value)) {
-                callback(new Error('排序只能输入数字类型'))
+                callback(new Error('排序只能输入数字'))
               } else if (Number(value) > 99) {
-                callback(new Error('排序只能输入0-99数字'))
+                callback(new Error('排序只能输入 0-99 之间的数字'))
               } else {
                 callback()
               }
@@ -246,7 +227,6 @@ export default class extends Vue {
     this.init()
   }
 
-  // 初始化信息
   private async init(isSearch?) {
     this.isSearch = isSearch
     await getCategoryPage({
@@ -257,20 +237,18 @@ export default class extends Vue {
     })
       .then(res => {
         if (String(res.data.code) === '1') {
-          this.tableData =
-            res && res.data && res.data.data && res.data.data.records
+          this.tableData = res && res.data && res.data.data && res.data.data.records
           this.counts = Number(res.data.data.total)
         } else {
-          this.$message.error(res.data.desc)
+          this.$message.error(res.data.desc || res.data.msg)
         }
       })
       .catch(err => {
         console.log(err, 'err')
-        this.$message.error('请求出错了：' + err.message)
+        this.$message.error('请求失败：' + err.message)
       })
   }
 
-  // 添加
   private addClass(st: any) {
     if (st == 'class') {
       this.classData.title = '新增菜品分类'
@@ -286,7 +264,6 @@ export default class extends Vue {
     this.actionType = 'add'
   }
 
-  // 修改
   private editHandle(dat: any) {
     this.classData.title = '修改分类'
     this.action = 'edit'
@@ -297,20 +274,16 @@ export default class extends Vue {
     this.actionType = 'edit'
   }
 
-  // 关闭弹窗
-  private handleClose(st: string) {
-    console.log(this.$refs.classData, 'this.$refs.classData')
+  private handleClose() {
     this.classData.dialogVisible = false
-    //对该表单项进行重置，将其值重置为初始值并移除校验结果
     this.$refs.classData.resetFields()
   }
 
-  //状态修改
   private statusHandle(row: any) {
     this.id = row.id
     this.status = row.status
-    this.$confirm('确认调整该分类的状态?', '提示', {
-      confirmButtonText: '确定',
+    this.$confirm('确认调整该分类状态？', '提示', {
+      confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'warning',
       customClass: 'customClass'
@@ -318,19 +291,18 @@ export default class extends Vue {
       enableOrDisableEmployee({ id: this.id, status: !this.status ? 1 : 0 })
         .then(res => {
           if (String(res.status) === '200') {
-            this.$message.success('分类状态更改成功！')
+            this.$message.success('分类状态修改成功')
             this.init()
           }
         })
         .catch(err => {
-          this.$message.error('请求出错了：' + err.message)
+          this.$message.error('请求失败：' + err.message)
         })
     })
   }
 
-  //删除
   private deleteHandle(id: any) {
-    this.$confirm('此操作将永久删除该分类，是否继续？', '确定删除', {
+    this.$confirm('此操作将永久删除该分类，是否继续？', '确认删除', {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning'
@@ -338,14 +310,14 @@ export default class extends Vue {
       deleCategory(id)
         .then(res => {
           if (res.data.code === 1) {
-            this.$message.success('删除成功！')
+            this.$message.success('删除成功')
             this.init()
           } else {
             this.$message.error(res.data.msg)
           }
         })
         .catch(err => {
-          this.$message.error('请求出错了：' + err.message)
+          this.$message.error('请求失败：' + err.message)
         })
     })
   }
@@ -354,8 +326,7 @@ export default class extends Vue {
     classData: any
   }
 
-  //数据提交
-  submitForm(st: any) {
+  private submitForm(st: any) {
     if (this.action === 'add') {
       this.$refs.classData.validate((value: boolean) => {
         if (value) {
@@ -366,7 +337,7 @@ export default class extends Vue {
           })
             .then(res => {
               if (res.data.code === 1) {
-                this.$message.success('分类添加成功！')
+                this.$message.success('分类添加成功')
                 this.$refs.classData.resetFields()
                 if (!st) {
                   this.classData.dialogVisible = false
@@ -377,7 +348,7 @@ export default class extends Vue {
               }
             })
             .catch(err => {
-              this.$message.error('请求出错了：' + err.message)
+              this.$message.error('请求失败：' + err.message)
             })
         }
       })
@@ -391,7 +362,7 @@ export default class extends Vue {
           })
             .then(res => {
               if (res.data.code === 1) {
-                this.$message.success('分类修改成功！')
+                this.$message.success('分类修改成功')
                 this.classData.dialogVisible = false
                 this.$refs.classData.resetFields()
                 this.init()
@@ -400,14 +371,13 @@ export default class extends Vue {
               }
             })
             .catch(err => {
-              this.$message.error('请求出错了：' + err.message)
+              this.$message.error('请求失败：' + err.message)
             })
         }
       })
     }
   }
 
-  //分页
   private handleSizeChange(val: any) {
     this.pageSize = val
     this.init()
@@ -419,6 +389,7 @@ export default class extends Vue {
   }
 }
 </script>
+
 <style lang="scss" scoped>
 .dashboard {
   &-container {
@@ -447,7 +418,7 @@ export default class extends Vue {
         text-align: center;
         margin-top: 30px;
       }
-      //查询黑色按钮样式
+
       .normal-btn {
         background: #333333;
         color: white;
@@ -457,10 +428,11 @@ export default class extends Vue {
   }
 }
 </style>
-<style lang='scss'>
+
+<style lang="scss">
 // .customClass {
 //   .el-button--primary {
-//     background-color: #ffc200 !important ;
+//     background-color: #ffc200 !important;
 //   }
 // }
 </style>
