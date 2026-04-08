@@ -1,8 +1,8 @@
 <template>
   <div class="container">
     <h2 class="homeTitle">
-      今日数据<i>{{ days[1] }}</i
-      ><span><router-link to="statistics">详细数据</router-link></span>
+      今日经营概览<i>{{ days[1] }}</i>
+      <span><router-link to="statistics">查看经营分析</router-link></span>
     </h2>
     <div class="overviewBox">
       <ul>
@@ -21,10 +21,9 @@
           </p>
         </li>
         <li>
-          <p class="tit">平均客单价</p>
+          <p class="tit">客单价</p>
           <p class="num">¥ {{ overviewData.unitPrice }}</p>
         </li>
-
         <li>
           <p class="tit">新增用户</p>
           <p class="num">{{ overviewData.newUsers }}</p>
@@ -33,14 +32,17 @@
     </div>
   </div>
 </template>
+
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import { getday } from '@/utils/formValidate'
+
 @Component({
-  name: 'Overview',
+  name: 'Overview'
 })
 export default class extends Vue {
   @Prop() private overviewData!: any
+
   get days() {
     return getday()
   }

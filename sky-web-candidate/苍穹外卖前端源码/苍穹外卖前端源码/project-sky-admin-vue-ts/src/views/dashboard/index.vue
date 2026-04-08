@@ -49,7 +49,7 @@ export default class extends Vue {
     this.init()
   }
 
-  init() {
+  private init() {
     this.$nextTick(() => {
       this.getBusinessOverview()
       this.getOrderOverview()
@@ -59,7 +59,7 @@ export default class extends Vue {
     })
   }
 
-  async getBusinessOverview() {
+  private async getBusinessOverview() {
     const response = await getBusinessData()
     const data = response.data.data || {}
     const todayOrders = Number(data.todayOrders || 0)
@@ -74,7 +74,7 @@ export default class extends Vue {
     }
   }
 
-  async getOrderOverview() {
+  private async getOrderOverview() {
     const response = await getOrderData()
     const data = response.data.data || {}
     this.orderviewData = {
@@ -86,7 +86,7 @@ export default class extends Vue {
     }
   }
 
-  async getDishOverview() {
+  private async getDishOverview() {
     const response = await getOverviewDishes()
     const data = response.data.data || {}
     const total = Number(data.dishTotal || 0)
@@ -97,7 +97,7 @@ export default class extends Vue {
     }
   }
 
-  async getSetmealOverview() {
+  private async getSetmealOverview() {
     const response = await getSetMealStatistics()
     const data = response.data.data || {}
     const total = Number(data.setmealTotal || 0)
@@ -108,14 +108,15 @@ export default class extends Vue {
     }
   }
 
-  getOrderListBy3Status() {
+  private getOrderListBy3Status() {
     getOrderListBy({})
       .then((response) => {
         if (response.data.code === 1) {
           const data = response.data.data || {}
           this.orderStatics = {
             toBeConfirmed: Number(data.toBeConfirmedOrders || 0),
-            confirmed: Number(data.confirmedOrders || 0)
+            confirmed: Number(data.confirmedOrders || 0),
+            deliveryInProgress: Number(data.deliveryInProgress || 0)
           }
         } else {
           this.$message.error(response.data.msg || '加载工作台订单状态失败')

@@ -1,15 +1,18 @@
-<!--  -->
 <template>
   <div class="tab-change">
-    <div v-for="item in changedOrderList"
-         :key="item.value"
-         class="tab-item"
-         :class="{ active: item.value === activeIndex }"
-         @click="tabChange(item.value)">
-      <el-badge :class="{'special-item':item.num<10}"
-                class="item"
-                :value="item.num > 99 ? '99+' : item.num"
-                :hidden="!([2, 3, 4].includes(item.value) && item.num)">
+    <div
+      v-for="item in changedOrderList"
+      :key="item.value"
+      class="tab-item"
+      :class="{ active: item.value === activeIndex }"
+      @click="tabChange(item.value)"
+    >
+      <el-badge
+        class="item"
+        :class="{ 'special-item': item.num < 10 }"
+        :value="item.num > 99 ? '99+' : item.num"
+        :hidden="!([2, 3, 4].includes(item.value) && item.num)"
+      >
         {{ item.label }}
       </el-badge>
     </div>
@@ -18,7 +21,6 @@
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
-import { getOrderDetailPage } from '@/api/order'
 
 @Component({
   name: 'TabChange'
@@ -71,6 +73,7 @@ export default class extends Vue {
   }
 }
 </script>
+
 <style lang="scss">
 .tab-change {
   display: flex;
@@ -87,12 +90,14 @@ export default class extends Vue {
     background-color: white;
     border-left: none;
     cursor: pointer;
+
     .special-item {
       .el-badge__content {
         width: 20px;
         padding: 0 5px;
       }
     }
+
     .item {
       .el-badge__content {
         background-color: #fd3333 !important;
@@ -100,18 +105,20 @@ export default class extends Vue {
         height: auto;
         min-width: 18px;
         min-height: 18px;
-        // border-radius: 50%;
       }
+
       .el-badge__content.is-fixed {
         top: 14px;
         right: 2px;
       }
     }
   }
+
   .active {
     background-color: #ffc200;
     font-weight: bold;
   }
+
   .tab-item:first-child {
     border-left: 1px solid #e5e4e4;
   }
